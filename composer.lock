@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cebbd8ae7a5039db3405bd7bcd909142",
+    "content-hash": "6963d7e8ab239001a32c6efd07a5cd97",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -10729,16 +10729,16 @@
         },
         {
             "name": "uspdev/replicado",
-            "version": "1.25.4",
+            "version": "1.27.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/uspdev/replicado.git",
-                "reference": "6158c2243a82eeb4bd19bbff4fc4bec3939bd44b"
+                "reference": "e7148e2fb3c7e2b5fd350fd68ea3de6fbad2e421"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/uspdev/replicado/zipball/6158c2243a82eeb4bd19bbff4fc4bec3939bd44b",
-                "reference": "6158c2243a82eeb4bd19bbff4fc4bec3939bd44b",
+                "url": "https://api.github.com/repos/uspdev/replicado/zipball/e7148e2fb3c7e2b5fd350fd68ea3de6fbad2e421",
+                "reference": "e7148e2fb3c7e2b5fd350fd68ea3de6fbad2e421",
                 "shasum": ""
             },
             "require": {
@@ -10772,9 +10772,9 @@
             "homepage": "https://github.com/uspdev/replicado",
             "support": {
                 "issues": "https://github.com/uspdev/replicado/issues",
-                "source": "https://github.com/uspdev/replicado/tree/1.25.4"
+                "source": "https://github.com/uspdev/replicado/tree/1.27.0"
             },
-            "time": "2025-04-09T14:36:59+00:00"
+            "time": "2025-11-05T18:20:28+00:00"
         },
         {
             "name": "uspdev/senhaunica-socialite",
@@ -13727,12 +13727,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2"
     },
-    "platform-dev": {},
+    "platform-dev": [],
     "plugin-api-version": "2.6.0"
 }

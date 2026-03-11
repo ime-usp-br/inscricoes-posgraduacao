@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedInteger('ano');
             $table->unsignedTinyInteger('semestre');
-            $table->timestamps('data_inicio_inscricao');
-            $table->timestamps('data_fim_inscricao');
+            $table->timestamp('data_inicio_inscricao');
+            $table->timestamp('data_fim_inscricao');
             $table->unique(['ano', 'semestre']);
             $table->timestamps();
         });

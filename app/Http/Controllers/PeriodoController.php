@@ -44,7 +44,7 @@ class PeriodoController extends Controller
         // }
 
         $validated = $request->validated();
-
+        
         $data_inicio = $validated['data_inicio_inscricao'];
 
         $sql = "

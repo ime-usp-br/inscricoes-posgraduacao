@@ -97,6 +97,16 @@ class Inscricao extends Model
 
     public function marcarDisciplinaAprovadaPelaSecretaria(string $slot): void
     {
+        $this->marcarDisciplinaSecretaria($slot, AprovacaoSecretariaDisciplina::Aprovado);
+    }
+
+    public function marcarDisciplinaReprovadaPelaSecretaria(string $slot): void
+    {
+        $this->marcarDisciplinaSecretaria($slot, AprovacaoSecretariaDisciplina::Reprovado);
+    }
+
+    private function marcarDisciplinaSecretaria(string $slot, AprovacaoSecretariaDisciplina $aprovacao): void
+    {
         $field = match ($slot) {
             'obrigatoria' => 'aprovacao_obrigatoria_secretaria',
             'opcional_1' => 'aprovacao_opcional_1_secretaria',
@@ -108,17 +118,13 @@ class Inscricao extends Model
             return;
         }
 
-        $this->{$field} = AprovacaoSecretariaDisciplina::Aprovado;
+        $this->{$field} = $aprovacao;
         $this->sincronizarStatusSecretaria();
         $this->save();
     }
 
     public function sincronizarStatusSecretaria(): void
     {
-        if ($this->status === InscricaoStatus::ReprovadoSecretaria) {
-            return;
-        }
-
         $disciplinas = $this->disciplinasParaAprovacaoSecretaria();
 
         if ($disciplinas === []) {

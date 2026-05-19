@@ -133,7 +133,7 @@ class InscricaoAdminController extends Controller
         if ($inscricao->aprovacaoSecretariaParaSlot($slot) === AprovacaoSecretariaDisciplina::Aprovado) {
             return redirect()
                 ->route('inscricoes.show', $inscricao)
-                ->with('info', 'Esta disciplina já foi aprovada pela secretaria.');
+                ->with('info', 'Esta disciplina já está aprovada pela secretaria.');
         }
 
         $inscricao->marcarDisciplinaAprovadaPelaSecretaria($slot);
@@ -154,5 +154,56 @@ class InscricaoAdminController extends Controller
         return redirect()
             ->route('inscricoes.show', $inscricao)
             ->with('success', "Disciplina {$codigo} aprovada pela secretaria.");
+    }
+
+    public function reprovarDisciplinaSecretaria(
+        AprovarDisciplinaSecretariaRequest $request,
+        Inscricao $inscricao,
+    ): RedirectResponse {
+        if ($inscricao->etapa_concluida < 3) {
+            return redirect()
+                ->route('inscricoes.show', $inscricao)
+                ->withErrors(['aprovacao' => 'A inscrição ainda não foi concluída pelo candidato.']);
+        }
+
+        $slot = $request->string('disciplina')->toString();
+
+        $disciplinaId = match ($slot) {
+            'obrigatoria' => $inscricao->disciplina_obrigatoria_id,
+            'opcional_1' => $inscricao->disciplina_opcional_1_id,
+            'opcional_2' => $inscricao->disciplina_opcional_2_id,
+            default => null,
+        };
+
+        if ($disciplinaId === null) {
+            return redirect()
+                ->route('inscricoes.show', $inscricao)
+                ->withErrors(['aprovacao' => 'Esta disciplina não está vinculada à inscrição.']);
+        }
+
+        if ($inscricao->aprovacaoSecretariaParaSlot($slot) === AprovacaoSecretariaDisciplina::Reprovado) {
+            return redirect()
+                ->route('inscricoes.show', $inscricao)
+                ->with('info', 'Esta disciplina já está reprovada pela secretaria.');
+        }
+
+        $inscricao->marcarDisciplinaReprovadaPelaSecretaria($slot);
+
+        $inscricao->load([
+            'disciplinaObrigatoria',
+            'disciplinaOpcional1',
+            'disciplinaOpcional2',
+        ]);
+
+        $codigo = match ($slot) {
+            'obrigatoria' => $inscricao->disciplinaObrigatoria?->codigo_completo,
+            'opcional_1' => $inscricao->disciplinaOpcional1?->codigo_completo,
+            'opcional_2' => $inscricao->disciplinaOpcional2?->codigo_completo,
+            default => null,
+        };
+
+        return redirect()
+            ->route('inscricoes.show', $inscricao)
+            ->with('success', "Disciplina {$codigo} reprovada pela secretaria.");
     }
 }

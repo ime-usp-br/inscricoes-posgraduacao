@@ -92,6 +92,82 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
     }
 
     #[Test]
+    public function rejecting_one_discipline_does_not_change_general_status(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'disciplina' => 'obrigatoria',
+            ])
+            ->assertRedirect(route('inscricoes.show', $inscricao));
+
+        $inscricao->refresh();
+        $this->assertSame(AprovacaoSecretariaDisciplina::Reprovado, $inscricao->aprovacao_obrigatoria_secretaria);
+        $this->assertSame(InscricaoStatus::Inscrito, $inscricao->status);
+    }
+
+    #[Test]
+    public function admin_can_toggle_between_approved_and_rejected(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create(['aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado]);
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'disciplina' => 'obrigatoria',
+            ])
+            ->assertRedirect(route('inscricoes.show', $inscricao));
+
+        $inscricao->refresh();
+        $this->assertSame(AprovacaoSecretariaDisciplina::Reprovado, $inscricao->aprovacao_obrigatoria_secretaria);
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.aprovar-secretaria', $inscricao), [
+                'disciplina' => 'obrigatoria',
+            ])
+            ->assertRedirect(route('inscricoes.show', $inscricao));
+
+        $inscricao->refresh();
+        $this->assertSame(AprovacaoSecretariaDisciplina::Aprovado, $inscricao->aprovacao_obrigatoria_secretaria);
+    }
+
+    #[Test]
+    public function mixed_approval_and_rejection_keeps_inscrito_until_all_approved(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), ['disciplina' => 'obrigatoria']);
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.aprovar-secretaria', $inscricao), ['disciplina' => 'opcional_1']);
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.aprovar-secretaria', $inscricao), ['disciplina' => 'opcional_2']);
+
+        $inscricao->refresh();
+        $this->assertSame(InscricaoStatus::Inscrito, $inscricao->status);
+    }
+
+    #[Test]
     public function show_page_displays_approve_button_with_discipline_code(): void
     {
         $admin = User::factory()->create();
@@ -108,6 +184,7 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
             ->get(route('inscricoes.show', $inscricao))
             ->assertOk()
             ->assertSee('Aprovação pela Secretaria (1ª etapa)')
-            ->assertSee("Aprovar {$codigo}", false);
+            ->assertSee("Aprovar {$codigo}", false)
+            ->assertSee("Reprovar {$codigo}", false);
     }
 }

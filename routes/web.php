@@ -42,4 +42,6 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function (): void {
     Route::get('/inscricoes/{inscricao}', [InscricaoAdminController::class, 'show'])->name('inscricoes.show');
     Route::post('/inscricoes/{inscricao}/aprovar-secretaria', [InscricaoAdminController::class, 'aprovarDisciplinaSecretaria'])
         ->name('inscricoes.aprovar-secretaria');
+    Route::post('/inscricoes/{inscricao}/reprovar-secretaria', [InscricaoAdminController::class, 'reprovarDisciplinaSecretaria'])
+        ->name('inscricoes.reprovar-secretaria');
 });

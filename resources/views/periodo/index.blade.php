@@ -1,14 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 Períodos de Inscrição
             </h2>
 
+            <div class="flex flex-wrap items-center gap-3">
+                <x-back-link :href="route('secretaria')" label="Voltar à Secretaria" />
             <a href="{{ route('periodo.create') }}"
                class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
                 Novo período
             </a>
+            </div>
         </div>
     </x-slot>
 

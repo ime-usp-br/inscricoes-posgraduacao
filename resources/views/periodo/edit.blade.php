@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Editar Período de Inscrições
-        </h2>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                Editar Período de Inscrições
+            </h2>
+            <x-back-link :href="route('periodo.index')" label="Voltar à lista" />
+        </div>
     </x-slot>
 
     <div class="py-6">
@@ -13,14 +16,9 @@
 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 lg:p-8 text-gray-900">
-                        <div class="flex items-center justify-between">
-                            <h1 class="text-2xl font-semibold text-gray-900">
-                                {{ $periodo->ano }}/{{ $periodo->semestre }}
-                            </h1>
-                            <a href="{{ route('periodo.index') }}" class="text-sm text-blue-700 hover:underline">
-                                Voltar
-                            </a>
-                        </div>
+                        <h1 class="text-2xl font-semibold text-gray-900">
+                            {{ $periodo->ano }}/{{ $periodo->semestre }}
+                        </h1>
 
                         <div class="mt-6 flex gap-4 mb-4">
                             <div class="w-1/2">

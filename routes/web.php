@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DisciplinaOfertadaController;
 use App\Http\Controllers\InscricaoAdminController;
+use App\Http\Controllers\InscricaoProfessorController;
 use App\Http\Controllers\InscricaoController;
 use App\Http\Controllers\PeriodoController;
 
@@ -44,4 +45,13 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function (): void {
         ->name('inscricoes.aprovar-secretaria');
     Route::post('/inscricoes/{inscricao}/reprovar-secretaria', [InscricaoAdminController::class, 'reprovarDisciplinaSecretaria'])
         ->name('inscricoes.reprovar-secretaria');
+
+    Route::view('/professor', 'professor.index')->name('professor');
+
+    Route::get('/professor/inscricoes', [InscricaoProfessorController::class, 'index'])->name('professor.inscricoes.index');
+    Route::get('/professor/inscricoes/{inscricao}', [InscricaoProfessorController::class, 'show'])->name('professor.inscricoes.show');
+    Route::post('/professor/inscricoes/{inscricao}/aprovar', [InscricaoProfessorController::class, 'aprovarDisciplinaProfessor'])
+        ->name('professor.inscricoes.aprovar');
+    Route::post('/professor/inscricoes/{inscricao}/reprovar', [InscricaoProfessorController::class, 'reprovarDisciplinaProfessor'])
+        ->name('professor.inscricoes.reprovar');
 });

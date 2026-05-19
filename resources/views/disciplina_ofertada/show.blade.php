@@ -9,9 +9,10 @@
                 <x-table-action-edit :href="route('disciplina-ofertada.edit', $disciplina)" class="!px-4 !py-2 !text-sm">
                     Editar
                 </x-table-action-edit>
-                <a href="{{ route('disciplina-ofertada.index') }}" class="text-sm text-blue-700 hover:underline">
-                    Voltar
-                </a>
+                <x-back-link
+                    :href="route('disciplina-ofertada.index', request()->only(['periodo_id', 'departamento', 'q']))"
+                    label="Voltar à lista"
+                />
             </div>
         </div>
     </x-slot>

@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Cadastrar Período de Inscrições') }}
-        </h2>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                {{ __('Cadastrar Período de Inscrições') }}
+            </h2>
+            <x-back-link :href="route('periodo.index')" label="Voltar à lista" />
+        </div>
     </x-slot>
 
     <div class="py-6">

@@ -73,6 +73,7 @@
                         </div>
                     </div>
                 </div>
+
             </div>
 
             <p class="mt-8 text-center">

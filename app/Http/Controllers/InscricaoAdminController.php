@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AprovacaoSecretariaDisciplina;
+use App\Enums\ResumoAprovacaoInscricao;
 use App\Http\Requests\AprovarDisciplinaSecretariaRequest;
 use App\Models\DisciplinaOfertada;
 use App\Models\Inscricao;
@@ -21,6 +22,7 @@ class InscricaoAdminController extends Controller
         $search = trim($request->string('q')->toString());
         $periodoId = $request->integer('periodo_id');
         $disciplinaId = $request->integer('disciplina_id');
+        $filtroAprovacao = $request->string('aprovacao')->toString();
 
         $query = Inscricao::query()
             ->with(['periodo', 'disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2'])
@@ -44,6 +46,16 @@ class InscricaoAdminController extends Controller
             });
         }
 
+        match ($filtroAprovacao) {
+            'secretaria_pendente' => $query->filtrarResumoSecretaria(ResumoAprovacaoInscricao::Pendente),
+            'secretaria_aprovada' => $query->filtrarResumoSecretaria(ResumoAprovacaoInscricao::Aprovada),
+            'secretaria_reprovada' => $query->filtrarResumoSecretaria(ResumoAprovacaoInscricao::Reprovada),
+            'professor_pendente' => $query->filtrarResumoProfessor(ResumoAprovacaoInscricao::Pendente),
+            'professor_aprovada' => $query->filtrarResumoProfessor(ResumoAprovacaoInscricao::Aprovada),
+            'professor_reprovada' => $query->filtrarResumoProfessor(ResumoAprovacaoInscricao::Reprovada),
+            default => null,
+        };
+
         $inscricoes = $query->paginate(20)->withQueryString();
 
         $periodos = Periodo::query()
@@ -65,6 +77,7 @@ class InscricaoAdminController extends Controller
             'search',
             'periodoId',
             'disciplinaId',
+            'filtroAprovacao',
         ));
     }
 

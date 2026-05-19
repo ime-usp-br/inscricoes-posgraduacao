@@ -36,6 +36,9 @@ class InscricaoFactory extends Factory
             'aprovacao_obrigatoria_secretaria' => null,
             'aprovacao_opcional_1_secretaria' => null,
             'aprovacao_opcional_2_secretaria' => null,
+            'aprovacao_obrigatoria_professor' => null,
+            'aprovacao_opcional_1_professor' => null,
+            'aprovacao_opcional_2_professor' => null,
         ];
     }
 

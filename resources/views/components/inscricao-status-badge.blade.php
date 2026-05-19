@@ -7,6 +7,8 @@
 
     $classes = match ($enum) {
         \App\Enums\InscricaoStatus::AprovadoSecretaria => 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 ring-green-200 dark:ring-green-800',
+        \App\Enums\InscricaoStatus::AprovadoProfessor => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 ring-emerald-200 dark:ring-emerald-800',
+        \App\Enums\InscricaoStatus::ReprovadoProfessor => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 ring-red-200 dark:ring-red-800',
         \App\Enums\InscricaoStatus::ReprovadoSecretaria => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 ring-red-200 dark:ring-red-800',
         default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 ring-gray-200 dark:ring-gray-600',
     };

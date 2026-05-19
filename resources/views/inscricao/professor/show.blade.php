@@ -5,7 +5,7 @@
                 Inscrição — {{ $inscricao->nome_completo }}
             </h2>
             <x-back-link
-                :href="route('inscricoes.index', request()->only(['q', 'periodo_id', 'disciplina_id']))"
+                :href="route('professor.inscricoes.index', request()->only(['q', 'periodo_id', 'disciplina_id']))"
                 label="Voltar à lista"
             />
         </div>
@@ -17,9 +17,9 @@
 
             @include('inscricao._dados-candidato', ['inscricao' => $inscricao])
 
-            @include('inscricao._aprovacao-secretaria', ['inscricao' => $inscricao, 'editavel' => true])
+            @include('inscricao._aprovacao-secretaria', ['inscricao' => $inscricao, 'editavel' => false])
 
-            @include('inscricao._aprovacao-professor', ['inscricao' => $inscricao, 'editavel' => false])
+            @include('inscricao._aprovacao-professor', ['inscricao' => $inscricao, 'editavel' => true])
         </div>
     </div>
 </x-app-layout>

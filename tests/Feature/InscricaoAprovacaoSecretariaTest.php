@@ -61,7 +61,7 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
 
         $inscricao->refresh();
         $this->assertSame(AprovacaoSecretariaDisciplina::Aprovado, $inscricao->aprovacao_obrigatoria_secretaria);
-        $this->assertSame(InscricaoStatus::Inscrito, $inscricao->status);
+        $this->assertSame(InscricaoStatus::AprovadoSecretaria, $inscricao->status);
 
         $this->actingAs($admin)
             ->post(route('inscricoes.aprovar-secretaria', $inscricao), ['disciplina' => 'opcional_1']);
@@ -82,12 +82,15 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
         $inscricao = Inscricao::factory()
             ->concluida()
             ->comTresDisciplinas()
-            ->create(['status' => InscricaoStatus::AprovadoSecretaria]);
+            ->create([
+                'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+                'status' => InscricaoStatus::AprovadoSecretaria,
+            ]);
 
         $this->actingAs($admin)
             ->get(route('inscricoes.index'))
             ->assertOk()
-            ->assertSee('Aprovado pela Secretaria')
+            ->assertSee('Aprovada pela Secretaria')
             ->assertSee($inscricao->nome_completo);
     }
 
@@ -144,7 +147,7 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
     }
 
     #[Test]
-    public function mixed_approval_and_rejection_keeps_inscrito_until_all_approved(): void
+    public function mixed_approval_and_rejection_is_approved_when_at_least_one_approved(): void
     {
         $admin = User::factory()->create();
         $admin->assignRole('Admin');
@@ -164,7 +167,49 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
             ->post(route('inscricoes.aprovar-secretaria', $inscricao), ['disciplina' => 'opcional_2']);
 
         $inscricao->refresh();
-        $this->assertSame(InscricaoStatus::Inscrito, $inscricao->status);
+        $this->assertSame(InscricaoStatus::AprovadoSecretaria, $inscricao->status);
+    }
+
+    #[Test]
+    public function all_rejected_disciplines_marks_as_reprovada_secretaria(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), ['disciplina' => 'obrigatoria']);
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), ['disciplina' => 'opcional_1']);
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), ['disciplina' => 'opcional_2']);
+
+        $inscricao->refresh();
+        $this->assertSame(InscricaoStatus::ReprovadoSecretaria, $inscricao->status);
+    }
+
+    #[Test]
+    public function can_filter_inscricoes_by_secretaria_approval(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $aprovada = Inscricao::factory()->concluida()->comTresDisciplinas()->create([
+            'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+        ]);
+
+        Inscricao::factory()->concluida()->comTresDisciplinas()->create();
+
+        $this->actingAs($admin)
+            ->get(route('inscricoes.index', ['aprovacao' => 'secretaria_aprovada']))
+            ->assertOk()
+            ->assertSee($aprovada->nome_completo);
     }
 
     #[Test]

@@ -26,11 +26,15 @@ class StorePeriodoRequest extends FormRequest
             "semestre"=>'required|integer|in:1,2',
             "data_inicio_inscricao"=>'required|date|before:data_fim_inscricao',
             "data_fim_inscricao"=>'required|date|after:data_inicio_inscricao',
+            "status" => 'required|in:aberto,fechado',
         ];
 
         return $rules;
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [
@@ -45,6 +49,8 @@ class StorePeriodoRequest extends FormRequest
             'data_fim_inscricao.required' => 'O campo data de fim das inscrições é obrigatório.',
             'data_fim_inscricao.date' => 'O campo data de fim das inscrições deve ser uma data válida.',
             'data_fim_inscricao.after' => 'A data de fim das inscrições deve ser posterior à data de início das inscrições.',
+            'status.required' => 'O campo status é obrigatório.',
+            'status.in' => 'O status deve ser aberto ou fechado.',
         ];
     }
 }

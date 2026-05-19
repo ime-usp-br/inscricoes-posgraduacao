@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6963d7e8ab239001a32c6efd07a5cd97",
+    "content-hash": "88099b7e976c4bb3ed481145d8a8504d",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -10778,25 +10778,25 @@
         },
         {
             "name": "uspdev/senhaunica-socialite",
-            "version": "7.3.19",
+            "version": "4.5.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/uspdev/senhaunica-socialite.git",
-                "reference": "f4db8f92dd26d3c718ae8a8804e10407b2505891"
+                "reference": "8f78488132fefa7f4198fba71c681195b659502a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/uspdev/senhaunica-socialite/zipball/f4db8f92dd26d3c718ae8a8804e10407b2505891",
-                "reference": "f4db8f92dd26d3c718ae8a8804e10407b2505891",
+                "url": "https://api.github.com/repos/uspdev/senhaunica-socialite/zipball/8f78488132fefa7f4198fba71c681195b659502a",
+                "reference": "8f78488132fefa7f4198fba71c681195b659502a",
                 "shasum": ""
             },
             "require": {
-                "doctrine/dbal": "^3 | ^4",
-                "kyslik/column-sortable": "^6 | ^7",
+                "doctrine/dbal": "^3 | ^4 ",
+                "kyslik/column-sortable": "^6 | ^7 | ^8",
                 "laravel/socialite": "^5",
                 "php": "^7 | ^8",
                 "socialiteproviders/manager": "^3 | ^4",
-                "spatie/laravel-permission": "^4 | ^5 | ^6"
+                "spatie/laravel-permission": "^4 | ^5 | ^6 | ^7"
             },
             "type": "library",
             "extra": {
@@ -10829,9 +10829,9 @@
             "homepage": "https://github.com/uspdev/senhaunica-socialite",
             "support": {
                 "issues": "https://github.com/uspdev/senhaunica-socialite/issues",
-                "source": "https://github.com/uspdev/senhaunica-socialite/tree/7.3.19"
+                "source": "https://github.com/uspdev/senhaunica-socialite/tree/4.5.8"
             },
-            "time": "2025-04-08T14:01:14+00:00"
+            "time": "2026-03-20T14:12:15+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
@@ -13727,12 +13727,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2"
     },
-    "platform-dev": [],
-    "plugin-api-version": "2.6.0"
+    "platform-dev": {},
+    "plugin-api-version": "2.9.0"
 }

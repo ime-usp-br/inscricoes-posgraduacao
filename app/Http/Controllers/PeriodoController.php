@@ -5,22 +5,28 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePeriodoRequest;
 use App\Http\Requests\UpdatePeriodoRequest;
 use App\Models\Periodo;
-use Uspdev\Replicado\DB;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class PeriodoController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
-        //
+        $periodos = Periodo::query()
+            ->orderByDesc('ano')
+            ->orderByDesc('semestre')
+            ->get();
+
+        return view('periodo.index', compact('periodos'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         // if(!Auth::check()){
         //     return redirect()->route('login');
@@ -32,10 +38,7 @@ class PeriodoController extends Controller
         return view('periodo.create', compact('periodo'));
     }
 
-    /**
-     * Busca no Replicado as disciplinas de pós-graduação iniciando após a data de início das inscrições informada.
-     */
-    public function store(StorePeriodoRequest $request)
+    public function confirmar(StorePeriodoRequest $request): View
     {
         // if(!Auth::check()){
         //     return redirect()->route('login');
@@ -43,38 +46,13 @@ class PeriodoController extends Controller
         //     abort(403);
         // }
 
+        /** @var array{ano:int,semestre:int,data_inicio_inscricao:string,data_fim_inscricao:string,status:'aberto'|'fechado'} $validated */
         $validated = $request->validated();
-        
-        $data_inicio = $validated['data_inicio_inscricao'];
 
-        $sql = "
-            SELECT *
-            FROM OFERECIMENTO
-            WHERE dtainiofe > '$data_inicio' AND
-            (sgldis LIKE 'MAC%' OR sgldis LIKE 'MAT%' OR sgldis LIKE 'MAE%' OR sgldis LIKE 'MAP%')
-            ORDER BY sgldis;
-        ";
-
-        $disciplinas = DB::fetchAll($sql);
-
-        // foreach ($disciplinas as $disciplina){
-        //     $sql = "
-        //         SELECT *
-        //         FROM R35DOCCOLTUR
-        //         WHERE sgldis = '{$disciplina['sgldis']}' AND
-        //         numofe = {$disciplina['numofe']};
-        //     ";
-
-        //     $result = DB::fetchAll($sql);
-        //     dd($result);
-        // }
-        
-        // dd($disciplinas);
-
-        return view('periodo.confirmar', compact('validated', 'disciplinas'));
+        return view('periodo.confirmar', compact('validated'));
     }
 
-    public function salvar(StorePeriodoRequest $request)
+    public function salvar(StorePeriodoRequest $request): RedirectResponse
     {
         // if(!Auth::check()){
         //     return redirect()->route('login');
@@ -82,43 +60,51 @@ class PeriodoController extends Controller
         //     abort(403);
         // }
 
+        /** @var array{ano:int,semestre:int,data_inicio_inscricao:string,data_fim_inscricao:string,status:'aberto'|'fechado'} $validated */
         $validated = $request->validated();
 
         $periodo = Periodo::create($validated);
 
-        return redirect()->route('periodo.show', $periodo->id)
+        return redirect()->route('periodo.show', $periodo)
             ->with('success', 'Período criado com sucesso.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Periodo $periodo)
+    public function show(Periodo $periodo): View
     {
-        //
+        return view('periodo.show', compact('periodo'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Periodo $periodo)
+    public function edit(Periodo $periodo): View
     {
-        //
+        return view('periodo.edit', compact('periodo'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdatePeriodoRequest $request, Periodo $periodo)
+    public function update(UpdatePeriodoRequest $request, Periodo $periodo): RedirectResponse
     {
-        //
+        $validated = $request->validated();
+        $periodo->update($validated);
+
+        return redirect()->route('periodo.index')
+            ->with('success', 'Período atualizado com sucesso.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Periodo $periodo)
+    public function destroy(Periodo $periodo): RedirectResponse
     {
-        //
+        $periodo->delete();
+
+        return redirect()->route('periodo.index')
+            ->with('success', 'Período excluído com sucesso.');
     }
 }

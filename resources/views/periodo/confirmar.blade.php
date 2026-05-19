@@ -13,21 +13,10 @@
             <ul class="mb-4">
                 <li><strong>Ano:</strong> {{ $validated['ano'] }}</li>
                 <li><strong>Semestre:</strong> {{ $validated['semestre'] }}</li>
+                <li><strong>Status:</strong> {{ $validated['status'] === 'aberto' ? 'Aberto' : 'Fechado' }}</li>
                 <li><strong>Início das Inscrições:</strong> {{ \Carbon\Carbon::parse($validated['data_inicio_inscricao'])->format('d/m/Y') }}</li>
                 <li><strong>Fim das Inscrições:</strong> {{ \Carbon\Carbon::parse($validated['data_fim_inscricao'])->format('d/m/Y') }}</li>
             </ul>
-
-            <h2 class="text-xl font-semibold mb-2">Disciplinas encontradas para esse período</h2>
-
-            @if(empty($disciplinas))
-                <p class="text-red-600">Nenhuma disciplina encontrada para esse período.</p>
-            @else
-                <ul class="list-disc pl-5">
-                    @foreach ($disciplinas as $disc)
-                        <li>{{ $disc['sgldis'] }}</li>
-                    @endforeach
-                </ul>
-            @endif
 
             {{-- Botão para confirmar --}}
             <form action="{{ route('periodo.salvar') }}" method="POST" class="mt-6">

@@ -9,7 +9,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
         {{-- Formulário --}}
-        <form action="{{ route('periodo.store') }}" method="POST" class="mt-6 space-y-6">
+        <form action="{{ route('periodo.confirmar') }}" method="POST" class="mt-6 space-y-6">
             @csrf
             
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -46,6 +46,21 @@
                             </select>
                         </div>
 
+                    </div>
+
+                    {{-- Status --}}
+                    <div class="mb-4">
+                        <label for="status" class="block font-medium text-sm text-gray-700">Status</label>
+                        <select name="status" id="status"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                required>
+                            <option value="">Selecione</option>
+                            <option value="aberto" @selected(old('status') === 'aberto')>Aberto</option>
+                            <option value="fechado" @selected(old('status') === 'fechado')>Fechado</option>
+                        </select>
+                        @error('status')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
 

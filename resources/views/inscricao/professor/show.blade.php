@@ -17,7 +17,9 @@
 
             @include('inscricao._dados-candidato', ['inscricao' => $inscricao])
 
-            @include('inscricao._aprovacao-secretaria', ['inscricao' => $inscricao, 'editavel' => false])
+            @if (auth()->user()?->isAdmin())
+                @include('inscricao._aprovacao-secretaria', ['inscricao' => $inscricao, 'editavel' => false])
+            @endif
 
             @include('inscricao._aprovacao-professor', ['inscricao' => $inscricao, 'editavel' => true])
         </div>

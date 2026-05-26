@@ -15,7 +15,7 @@
             </h3>
             <p class="text-sm text-gray-600 dark:text-gray-400">
                 @if ($editavel)
-                    Aprove ou reprove cada disciplina já liberada pela secretaria. Com ao menos uma aprovação, a inscrição
+                    Aprove ou reprove cada disciplina disponível para esta etapa. Com ao menos uma aprovação, a inscrição
                     aparece como <strong>Aprovada pelo Professor</strong>; se todas forem reprovadas, como
                     <strong>Reprovada pelo Professor</strong>.
                 @else
@@ -29,6 +29,7 @@
                         $disciplina = $item['disciplina'];
                         $slot = $item['slot'];
                         $codigo = $disciplina->codigo_completo;
+                        $justificativa = $item['justificativa'] ?? null;
                         $aprovacao = $inscricao->aprovacaoProfessorParaSlot($slot);
                         $jaAprovada = $aprovacao === \App\Enums\AprovacaoProfessorDisciplina::Aprovado;
                         $jaReprovada = $aprovacao === \App\Enums\AprovacaoProfessorDisciplina::Reprovado;
@@ -37,7 +38,10 @@
                         <div>
                             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ $codigo }}</p>
                             <p class="text-sm text-gray-600 dark:text-gray-400">{{ $disciplina->nome }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">{{ $disciplina->professor_nome }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">{{ $disciplina->professor_nome ?: 'Professor não informado' }}</p>
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 whitespace-pre-line">
+                                <span class="font-medium">Justificativa:</span> {{ $justificativa ?: '—' }}
+                            </p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             @if ($jaAprovada)

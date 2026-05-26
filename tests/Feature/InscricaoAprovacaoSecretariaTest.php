@@ -20,6 +20,8 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
         parent::setUp();
 
         Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Secretario', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Professor', 'guard_name' => 'web']);
     }
 
     #[Test]
@@ -36,6 +38,79 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
         $this->actingAs($user)
             ->get(route('inscricoes.index'))
             ->assertForbidden();
+    }
+
+    #[Test]
+    public function secretario_can_access_inscricoes_list(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $this->actingAs($secretario)
+            ->get(route('inscricoes.index'))
+            ->assertOk();
+    }
+
+    #[Test]
+    public function secretario_can_approve_discipline_in_secretaria_area(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($secretario)
+            ->post(route('inscricoes.aprovar-secretaria', $inscricao), [
+                'disciplina' => 'obrigatoria',
+            ])
+            ->assertRedirect(route('inscricoes.show', $inscricao));
+
+        $inscricao->refresh();
+        $this->assertSame(AprovacaoSecretariaDisciplina::Aprovado, $inscricao->aprovacao_obrigatoria_secretaria);
+    }
+
+    #[Test]
+    public function secretario_cannot_access_professor_routes(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $this->actingAs($secretario)
+            ->get(route('professor'))
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function secretario_cannot_delete_periodo(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $periodo = \App\Models\Periodo::factory()->create();
+
+        $this->actingAs($secretario)
+            ->delete(route('periodo.destroy', $periodo))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('periodos', ['id' => $periodo->id]);
+    }
+
+    #[Test]
+    public function secretario_cannot_delete_disciplina_ofertada(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $disciplina = \App\Models\DisciplinaOfertada::factory()->create();
+
+        $this->actingAs($secretario)
+            ->delete(route('disciplina-ofertada.destroy', $disciplina))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('disciplinas_ofertadas', ['id' => $disciplina->id]);
     }
 
     #[Test]

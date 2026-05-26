@@ -30,8 +30,11 @@ class InscricaoFactory extends Factory
             'etapa_concluida' => 0,
             'concluido_em' => null,
             'disciplina_obrigatoria_id' => null,
+            'justificativa_disciplina_obrigatoria' => null,
             'disciplina_opcional_1_id' => null,
+            'justificativa_disciplina_opcional_1' => null,
             'disciplina_opcional_2_id' => null,
+            'justificativa_disciplina_opcional_2' => null,
             'status' => InscricaoStatus::Inscrito,
             'aprovacao_obrigatoria_secretaria' => null,
             'aprovacao_opcional_1_secretaria' => null,
@@ -67,8 +70,11 @@ class InscricaoFactory extends Factory
             return [
                 'periodo_id' => $periodo->id,
                 'disciplina_obrigatoria_id' => $disciplinas[0]->id,
+                'justificativa_disciplina_obrigatoria' => 'Justificativa da disciplina obrigatória.',
                 'disciplina_opcional_1_id' => $disciplinas[1]->id,
+                'justificativa_disciplina_opcional_1' => 'Justificativa da disciplina opcional 1.',
                 'disciplina_opcional_2_id' => $disciplinas[2]->id,
+                'justificativa_disciplina_opcional_2' => 'Justificativa da disciplina opcional 2.',
             ];
         });
     }

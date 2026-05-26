@@ -11,7 +11,7 @@ class DisciplinaOfertadaSeeder extends Seeder
     public function run(): void
     {
         $periodo = Periodo::query()
-            ->where('status', 'aberto')
+            ->abertos()
             ->orderByDesc('ano')
             ->orderByDesc('semestre')
             ->first();
@@ -49,6 +49,13 @@ class DisciplinaOfertadaSeeder extends Seeder
                 'nome' => 'Estatística Aplicada',
                 'professor_nome' => 'Prof. Ana Costa',
                 'professor_email' => 'ana.costa@ime.usp.br',
+            ],
+            [
+                'departamento' => 'MPM',
+                'codigo' => '0501',
+                'nome' => 'Modelagem de Processos Matemáticos',
+                'professor_nome' => null,
+                'professor_email' => null,
             ],
         ];
 

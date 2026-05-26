@@ -20,6 +20,10 @@
                             {{ $periodo->ano }}/{{ $periodo->semestre }}
                         </h1>
 
+                        <p class="mt-2 text-sm text-gray-600">
+                            O status do período é calculado automaticamente pelo sistema no horário de Brasília.
+                        </p>
+
                         <div class="mt-6 flex gap-4 mb-4">
                             <div class="w-1/2">
                                 <label for="ano" class="block font-medium text-sm text-gray-700">Ano</label>
@@ -44,20 +48,6 @@
                                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="status" class="block font-medium text-sm text-gray-700">Status</label>
-                            <select name="status" id="status"
-                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    required>
-                                <option value="">Selecione</option>
-                                <option value="aberto" @selected(old('status', $periodo->status) === 'aberto')>Aberto</option>
-                                <option value="fechado" @selected(old('status', $periodo->status) === 'fechado')>Fechado</option>
-                            </select>
-                            @error('status')
-                                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                            @enderror
                         </div>
 
                         <div class="mb-4">

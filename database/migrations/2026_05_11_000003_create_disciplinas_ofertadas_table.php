@@ -11,11 +11,11 @@ return new class extends Migration
         Schema::create('disciplinas_ofertadas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('periodo_id')->constrained('periodos')->cascadeOnDelete();
-            $table->string('departamento', 3); // MAT, MAC, MAP, MAE
+            $table->string('departamento', 3); // MAT, MAC, MAP, MAE, MPM
             $table->string('codigo', 4); // 4 dígitos
             $table->string('nome');
-            $table->string('professor_nome');
-            $table->string('professor_email');
+            $table->string('professor_nome')->nullable();
+            $table->string('professor_email')->nullable();
             $table->timestamps();
 
             $table->index(['departamento', 'codigo']);

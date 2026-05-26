@@ -20,14 +20,20 @@ return new class extends Migration
             $table->timestamp('concluido_em')->nullable();
             $table->foreignId('disciplina_obrigatoria_id')->nullable()
                 ->constrained('disciplinas_ofertadas')->nullOnDelete();
+            $table->text('justificativa_disciplina_obrigatoria')->nullable();
             $table->foreignId('disciplina_opcional_1_id')->nullable()
                 ->constrained('disciplinas_ofertadas')->nullOnDelete();
+            $table->text('justificativa_disciplina_opcional_1')->nullable();
             $table->foreignId('disciplina_opcional_2_id')->nullable()
                 ->constrained('disciplinas_ofertadas')->nullOnDelete();
+            $table->text('justificativa_disciplina_opcional_2')->nullable();
             $table->string('status', 40)->default('inscrito');
             $table->string('aprovacao_obrigatoria_secretaria', 20)->nullable();
             $table->string('aprovacao_opcional_1_secretaria', 20)->nullable();
             $table->string('aprovacao_opcional_2_secretaria', 20)->nullable();
+            $table->string('aprovacao_obrigatoria_professor', 20)->nullable();
+            $table->string('aprovacao_opcional_1_professor', 20)->nullable();
+            $table->string('aprovacao_opcional_2_professor', 20)->nullable();
             $table->timestamps();
         });
     }

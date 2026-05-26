@@ -12,7 +12,7 @@ class InscricaoSeeder extends Seeder
     public function run(): void
     {
         $periodo = Periodo::query()
-            ->where('status', 'aberto')
+            ->abertos()
             ->orderByDesc('ano')
             ->orderByDesc('semestre')
             ->first();

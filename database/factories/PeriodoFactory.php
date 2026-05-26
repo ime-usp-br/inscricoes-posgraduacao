@@ -22,7 +22,6 @@ class PeriodoFactory extends Factory
             'semestre' => $this->faker->randomElement([1, 2]),
             'data_inicio_inscricao' => now()->subWeek(),
             'data_fim_inscricao' => now()->addMonth(),
-            'status' => 'aberto',
         ];
     }
 }

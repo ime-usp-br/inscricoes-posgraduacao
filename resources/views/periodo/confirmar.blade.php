@@ -9,6 +9,12 @@
     </x-slot>
 
     <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
+        @php
+            $inicioInscricoes = \Carbon\Carbon::parse($validated['data_inicio_inscricao'], 'America/Sao_Paulo')->startOfDay();
+            $fimInscricoes = \Carbon\Carbon::parse($validated['data_fim_inscricao'], 'America/Sao_Paulo')->endOfDay();
+            $statusAtual = \Carbon\Carbon::now('America/Sao_Paulo')->gte($inicioInscricoes)
+                && \Carbon\Carbon::now('America/Sao_Paulo')->lte($fimInscricoes);
+        @endphp
 
         <div class="bg-white shadow-sm sm:rounded-lg p-6">
             <h1 class="text-2xl font-semibold mb-4">Confirme os dados</h1>
@@ -16,9 +22,12 @@
             <ul class="mb-4">
                 <li><strong>Ano:</strong> {{ $validated['ano'] }}</li>
                 <li><strong>Semestre:</strong> {{ $validated['semestre'] }}</li>
-                <li><strong>Status:</strong> {{ $validated['status'] === 'aberto' ? 'Aberto' : 'Fechado' }}</li>
                 <li><strong>Início das Inscrições:</strong> {{ \Carbon\Carbon::parse($validated['data_inicio_inscricao'])->format('d/m/Y') }}</li>
                 <li><strong>Fim das Inscrições:</strong> {{ \Carbon\Carbon::parse($validated['data_fim_inscricao'])->format('d/m/Y') }}</li>
+                <li>
+                    <strong>Status atual:</strong>
+                    {{ $statusAtual ? 'Aberto' : 'Fechado' }}
+                </li>
             </ul>
 
             {{-- Botão para confirmar --}}

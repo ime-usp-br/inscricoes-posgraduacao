@@ -32,24 +32,26 @@
                         <span class="font-semibold">Código:</span> {{ $disciplina->codigo }}
                     </div>
                     <div class="text-sm text-gray-700">
-                        <span class="font-semibold">Professor:</span> {{ $disciplina->professor_nome }}
+                        <span class="font-semibold">Professor:</span> {{ $disciplina->professor_nome ?: '—' }}
                     </div>
                     <div class="text-sm text-gray-700">
-                        <span class="font-semibold">E-mail:</span> {{ $disciplina->professor_email }}
+                        <span class="font-semibold">E-mail:</span> {{ $disciplina->professor_email ?: '—' }}
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 lg:p-8 text-gray-900">
-                    <x-table-action-delete
-                        :action="route('disciplina-ofertada.destroy', $disciplina)"
-                        confirm="Tem certeza que deseja excluir esta disciplina?"
-                        class="!px-4 !py-2 !text-sm">
-                        Excluir disciplina
-                    </x-table-action-delete>
+            @if (auth()->user()?->canDeleteSecretariaResources())
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 lg:p-8 text-gray-900">
+                        <x-table-action-delete
+                            :action="route('disciplina-ofertada.destroy', $disciplina)"
+                            confirm="Tem certeza que deseja excluir esta disciplina?"
+                            class="!px-4 !py-2 !text-sm">
+                            Excluir disciplina
+                        </x-table-action-delete>
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

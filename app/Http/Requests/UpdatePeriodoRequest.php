@@ -37,9 +37,8 @@ class UpdatePeriodoRequest extends FormRequest
                     ->ignore($periodoId),
             ],
             "semestre" => 'required|integer|in:1,2',
-            "data_inicio_inscricao" => 'required|date|before:data_fim_inscricao',
-            "data_fim_inscricao" => 'required|date|after:data_inicio_inscricao',
-            "status" => 'required|in:aberto,fechado',
+            "data_inicio_inscricao" => 'required|date|before_or_equal:data_fim_inscricao',
+            "data_fim_inscricao" => 'required|date|after_or_equal:data_inicio_inscricao',
         ];
     }
 
@@ -57,12 +56,10 @@ class UpdatePeriodoRequest extends FormRequest
             'semestre.in' => 'O campo semestre deve ser 1 ou 2.',
             'data_inicio_inscricao.required' => 'O campo data de início das inscrições é obrigatório.',
             'data_inicio_inscricao.date' => 'O campo data de início das inscrições deve ser uma data válida.',
-            'data_inicio_inscricao.before' => 'A data de início das inscrições deve ser anterior à data de fim das inscrições.',
+            'data_inicio_inscricao.before_or_equal' => 'A data de início das inscrições deve ser anterior ou igual à data de fim das inscrições.',
             'data_fim_inscricao.required' => 'O campo data de fim das inscrições é obrigatório.',
             'data_fim_inscricao.date' => 'O campo data de fim das inscrições deve ser uma data válida.',
-            'data_fim_inscricao.after' => 'A data de fim das inscrições deve ser posterior à data de início das inscrições.',
-            'status.required' => 'O campo status é obrigatório.',
-            'status.in' => 'O status deve ser aberto ou fechado.',
+            'data_fim_inscricao.after_or_equal' => 'A data de fim das inscrições deve ser posterior ou igual à data de início das inscrições.',
         ];
     }
 }

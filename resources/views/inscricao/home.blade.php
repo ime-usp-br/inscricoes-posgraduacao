@@ -325,7 +325,9 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 lg:p-8 text-gray-900 dark:text-gray-100 space-y-4">
                         <h3 class="text-lg font-semibold">Etapa 3 — Disciplinas</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Uma disciplina é obrigatória; até duas opcionais.</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            Uma disciplina é obrigatória; até duas opcionais. Informe também uma justificativa para cada disciplina selecionada.
+                        </p>
                         <form method="POST" action="{{ route('inscricao.etapa3') }}" class="space-y-4">
                             @csrf
                             <div>
@@ -341,6 +343,16 @@
                                 @error('disciplina_obrigatoria_id')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
                             <div>
+                                <label class="block text-sm font-medium">Justificativa da disciplina obrigatória</label>
+                                <textarea
+                                    name="justificativa_disciplina_obrigatoria"
+                                    rows="4"
+                                    required
+                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                >{{ old('justificativa_disciplina_obrigatoria') }}</textarea>
+                                @error('justificativa_disciplina_obrigatoria')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium">Disciplina opcional 1</label>
                                 <select name="disciplina_opcional_1_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm">
                                     <option value="">— Nenhuma —</option>
@@ -353,6 +365,15 @@
                                 @error('disciplina_opcional_1_id')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
                             <div>
+                                <label class="block text-sm font-medium">Justificativa da disciplina opcional 1</label>
+                                <textarea
+                                    name="justificativa_disciplina_opcional_1"
+                                    rows="4"
+                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                >{{ old('justificativa_disciplina_opcional_1') }}</textarea>
+                                @error('justificativa_disciplina_opcional_1')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium">Disciplina opcional 2</label>
                                 <select name="disciplina_opcional_2_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm">
                                     <option value="">— Nenhuma —</option>
@@ -363,6 +384,15 @@
                                     @endforeach
                                 </select>
                                 @error('disciplina_opcional_2_id')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Justificativa da disciplina opcional 2</label>
+                                <textarea
+                                    name="justificativa_disciplina_opcional_2"
+                                    rows="4"
+                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                >{{ old('justificativa_disciplina_opcional_2') }}</textarea>
+                                @error('justificativa_disciplina_opcional_2')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
                             @error('disciplinas')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
                             @error('sessao')<p class="text-sm text-red-600">{{ $message }}</p>@enderror

@@ -21,6 +21,7 @@
                         $disciplina = $item['disciplina'];
                         $slot = $item['slot'];
                         $codigo = $disciplina->codigo_completo;
+                        $justificativa = $item['justificativa'] ?? null;
                         $aprovacao = $inscricao->aprovacaoSecretariaParaSlot($slot);
                         $jaAprovada = $aprovacao === \App\Enums\AprovacaoSecretariaDisciplina::Aprovado;
                         $jaReprovada = $aprovacao === \App\Enums\AprovacaoSecretariaDisciplina::Reprovado;
@@ -29,6 +30,9 @@
                         <div>
                             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ $codigo }}</p>
                             <p class="text-sm text-gray-600 dark:text-gray-400">{{ $disciplina->nome }}</p>
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 whitespace-pre-line">
+                                <span class="font-medium">Justificativa:</span> {{ $justificativa ?: '—' }}
+                            </p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             @if ($jaAprovada)

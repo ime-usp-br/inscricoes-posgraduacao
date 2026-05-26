@@ -29,5 +29,11 @@ class RoleSeeder extends Seeder
 
         // Admin role for Filament panel access
         Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+
+        // Secretario role for secretaria access
+        Role::firstOrCreate(['name' => 'Secretario', 'guard_name' => 'web']);
+
+        // Professor role for professor access
+        Role::firstOrCreate(['name' => 'Professor', 'guard_name' => 'web']);
     }
 }

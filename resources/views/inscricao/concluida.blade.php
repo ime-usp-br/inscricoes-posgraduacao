@@ -19,24 +19,38 @@
                         Período: <strong>{{ $periodo->ano }}/{{ $periodo->semestre }}</strong>
                         — {{ $inscricao->nome_completo }} ({{ $inscricao->email }})
                     </p>
-                    @if ($inscricao->disciplinaObrigatoria)
-                        <p class="mt-4 text-sm">
-                            <span class="font-medium">Disciplina obrigatória:</span>
-                            {{ $inscricao->disciplinaObrigatoria->codigo_completo }} — {{ $inscricao->disciplinaObrigatoria->nome }}
-                        </p>
-                    @endif
-                    @if ($inscricao->disciplinaOpcional1)
-                        <p class="mt-1 text-sm">
-                            <span class="font-medium">Opcional 1:</span>
-                            {{ $inscricao->disciplinaOpcional1->codigo_completo }} — {{ $inscricao->disciplinaOpcional1->nome }}
-                        </p>
-                    @endif
-                    @if ($inscricao->disciplinaOpcional2)
-                        <p class="mt-1 text-sm">
-                            <span class="font-medium">Opcional 2:</span>
-                            {{ $inscricao->disciplinaOpcional2->codigo_completo }} — {{ $inscricao->disciplinaOpcional2->nome }}
-                        </p>
-                    @endif
+                    @php
+                        $disciplinasSelecionadas = [
+                            [
+                                'rotulo' => 'Disciplina obrigatória',
+                                'disciplina' => $inscricao->disciplinaObrigatoria,
+                                'justificativa' => $inscricao->justificativa_disciplina_obrigatoria,
+                            ],
+                            [
+                                'rotulo' => 'Opcional 1',
+                                'disciplina' => $inscricao->disciplinaOpcional1,
+                                'justificativa' => $inscricao->justificativa_disciplina_opcional_1,
+                            ],
+                            [
+                                'rotulo' => 'Opcional 2',
+                                'disciplina' => $inscricao->disciplinaOpcional2,
+                                'justificativa' => $inscricao->justificativa_disciplina_opcional_2,
+                            ],
+                        ];
+                    @endphp
+                    @foreach ($disciplinasSelecionadas as $item)
+                        @if ($item['disciplina'])
+                            <div class="mt-4 text-sm space-y-1">
+                                <p>
+                                    <span class="font-medium">{{ $item['rotulo'] }}:</span>
+                                    {{ $item['disciplina']->codigo_completo }} — {{ $item['disciplina']->nome }}
+                                </p>
+                                <p class="whitespace-pre-line text-gray-700 dark:text-gray-300">
+                                    <span class="font-medium">Justificativa:</span> {{ $item['justificativa'] ?: '—' }}
+                                </p>
+                            </div>
+                        @endif
+                    @endforeach
                 </div>
             </div>
         </div>

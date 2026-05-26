@@ -18,10 +18,6 @@
 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 lg:p-8 text-gray-900 space-y-6">
-                        <div class="text-sm text-gray-700 dark:text-gray-300">
-                            <span class="font-semibold">Código completo:</span> {{ $disciplina->codigo_completo }}
-                        </div>
-
                         @include('disciplina_ofertada._form', ['disciplina' => $disciplina, 'periodos' => $periodos])
 
                         <div class="flex items-center gap-3">

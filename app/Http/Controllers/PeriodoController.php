@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePeriodoRequest;
 use App\Models\Periodo;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 class PeriodoController extends Controller
 {
@@ -46,8 +47,18 @@ class PeriodoController extends Controller
         //     abort(403);
         // }
 
-        /** @var array{ano:int,semestre:int,data_inicio_inscricao:string,data_fim_inscricao:string,status:'aberto'|'fechado'} $validated */
+        /** @var array{ano:int,semestre:int,data_inicio_inscricao:string,data_fim_inscricao:string} $validated */
         $validated = $request->validated();
+
+        $disciplinas = DB::select("
+            SELECT *
+            FROM OFERECIMENTO
+            WHERE dtainiofe > '{$validated['data_inicio_inscricao']}' AND
+            (sgldis LIKE 'MAC%' OR sgldis LIKE 'MAT%' OR sgldis LIKE 'MAE%' OR sgldis LIKE 'MAP%')
+            ORDER BY sgldis;
+        ");
+
+        dd($disciplinas);
 
         return view('periodo.confirmar', compact('validated'));
     }
@@ -60,7 +71,7 @@ class PeriodoController extends Controller
         //     abort(403);
         // }
 
-        /** @var array{ano:int,semestre:int,data_inicio_inscricao:string,data_fim_inscricao:string,status:'aberto'|'fechado'} $validated */
+        /** @var array{ano:int,semestre:int,data_inicio_inscricao:string,data_fim_inscricao:string} $validated */
         $validated = $request->validated();
 
         $periodo = Periodo::create($validated);
@@ -102,6 +113,8 @@ class PeriodoController extends Controller
      */
     public function destroy(Periodo $periodo): RedirectResponse
     {
+        abort_unless(auth()->user()?->canDeleteSecretariaResources(), 403, 'Somente administradores podem excluir períodos.');
+
         $periodo->delete();
 
         return redirect()->route('periodo.index')

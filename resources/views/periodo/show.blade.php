@@ -43,16 +43,18 @@
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 lg:p-8 text-gray-900">
-                    <x-table-action-delete
-                        :action="route('periodo.destroy', $periodo)"
-                        confirm="Tem certeza que deseja excluir este período?"
-                        class="!px-4 !py-2 !text-sm">
-                        Excluir período
-                    </x-table-action-delete>
+            @if (auth()->user()?->canDeleteSecretariaResources())
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 lg:p-8 text-gray-900">
+                        <x-table-action-delete
+                            :action="route('periodo.destroy', $periodo)"
+                            confirm="Tem certeza que deseja excluir este período?"
+                            class="!px-4 !py-2 !text-sm">
+                            Excluir período
+                        </x-table-action-delete>
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

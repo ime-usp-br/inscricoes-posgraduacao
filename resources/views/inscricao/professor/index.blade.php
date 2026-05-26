@@ -8,12 +8,16 @@
         </div>
     </x-slot>
 
+    @php
+        $mostrarColunaSecretaria = auth()->user()?->isAdmin();
+    @endphp
+
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 lg:p-8 text-gray-900 dark:text-gray-100 space-y-4">
                     <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Exibindo inscrições concluídas com ao menos uma disciplina aprovada pela secretaria.
+                        Exibindo inscrições concluídas disponíveis para avaliação do professor.
                     </p>
 
                     <form method="GET" action="{{ route('professor.inscricoes.index') }}" class="grid grid-cols-1 md:grid-cols-12 gap-3">
@@ -58,7 +62,9 @@
                             <thead>
                                 <tr class="text-left text-gray-600 dark:text-gray-400">
                                     <th class="px-4 py-3 font-semibold">Nome</th>
-                                    <th class="px-4 py-3 font-semibold">Secretaria</th>
+                                    @if ($mostrarColunaSecretaria)
+                                        <th class="px-4 py-3 font-semibold">Secretaria</th>
+                                    @endif
                                     <th class="px-4 py-3 font-semibold">Professor</th>
                                     <th class="px-4 py-3 font-semibold">Disciplina(s)</th>
                                     <th class="px-4 py-3 font-semibold">Período</th>
@@ -72,9 +78,11 @@
                                                 {{ $i->nome_completo }}
                                             </a>
                                         </td>
-                                        <td class="px-4 py-4">
-                                            <x-inscricao-resumo-etapa-badge :resumo="$i->resumoAprovacaoSecretaria()" etapa="secretaria" />
-                                        </td>
+                                        @if ($mostrarColunaSecretaria)
+                                            <td class="px-4 py-4">
+                                                <x-inscricao-resumo-etapa-badge :resumo="$i->resumoAprovacaoSecretaria()" etapa="secretaria" />
+                                            </td>
+                                        @endif
                                         <td class="px-4 py-4">
                                             <x-inscricao-resumo-etapa-badge :resumo="$i->resumoAprovacaoProfessor()" etapa="professor" />
                                         </td>
@@ -103,7 +111,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="px-4 py-8 text-center text-gray-600 dark:text-gray-400">
+                                        <td colspan="{{ $mostrarColunaSecretaria ? 5 : 4 }}" class="px-4 py-8 text-center text-gray-600 dark:text-gray-400">
                                             Nenhuma inscrição disponível para avaliação do professor.
                                         </td>
                                     </tr>

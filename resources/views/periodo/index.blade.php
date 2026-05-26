@@ -66,9 +66,11 @@
                                             <td class="px-4 py-4 text-right rounded-r-lg">
                                                 <div class="inline-flex flex-wrap items-center justify-end gap-2">
                                                     <x-table-action-edit :href="route('periodo.edit', $p)" />
-                                                    <x-table-action-delete
-                                                        :action="route('periodo.destroy', $p)"
-                                                        confirm="Tem certeza que deseja excluir este período?" />
+                                                    @if (auth()->user()?->canDeleteSecretariaResources())
+                                                        <x-table-action-delete
+                                                            :action="route('periodo.destroy', $p)"
+                                                            confirm="Tem certeza que deseja excluir este período?" />
+                                                    @endif
                                                 </div>
                                             </td>
                                         </tr>

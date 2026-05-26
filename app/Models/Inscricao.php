@@ -34,8 +34,11 @@ class Inscricao extends Model
         'etapa_concluida',
         'concluido_em',
         'disciplina_obrigatoria_id',
+        'justificativa_disciplina_obrigatoria',
         'disciplina_opcional_1_id',
+        'justificativa_disciplina_opcional_1',
         'disciplina_opcional_2_id',
+        'justificativa_disciplina_opcional_2',
         'status',
         'aprovacao_obrigatoria_secretaria',
         'aprovacao_opcional_1_secretaria',
@@ -72,7 +75,7 @@ class Inscricao extends Model
     }
 
     /**
-     * @return list<array{slot: string, disciplina: DisciplinaOfertada, aprovacao: string}>
+     * @return list<array{slot: string, disciplina: DisciplinaOfertada, aprovacao: string, justificativa: ?string}>
      */
     public function disciplinasParaAprovacaoSecretaria(): array
     {
@@ -80,14 +83,17 @@ class Inscricao extends Model
             'obrigatoria' => [
                 'disciplina' => $this->disciplinaObrigatoria,
                 'aprovacao' => 'aprovacao_obrigatoria_secretaria',
+                'justificativa' => $this->justificativa_disciplina_obrigatoria,
             ],
             'opcional_1' => [
                 'disciplina' => $this->disciplinaOpcional1,
                 'aprovacao' => 'aprovacao_opcional_1_secretaria',
+                'justificativa' => $this->justificativa_disciplina_opcional_1,
             ],
             'opcional_2' => [
                 'disciplina' => $this->disciplinaOpcional2,
                 'aprovacao' => 'aprovacao_opcional_2_secretaria',
+                'justificativa' => $this->justificativa_disciplina_opcional_2,
             ],
         ];
 
@@ -101,6 +107,7 @@ class Inscricao extends Model
                 'slot' => $slot,
                 'disciplina' => $config['disciplina'],
                 'aprovacao' => $config['aprovacao'],
+                'justificativa' => $config['justificativa'],
             ];
         }
 
@@ -176,7 +183,7 @@ class Inscricao extends Model
     }
 
     /**
-     * @param  list<array{slot: string, disciplina: DisciplinaOfertada, aprovacao: string}>  $disciplinas
+     * @param  list<array{slot: string, disciplina: DisciplinaOfertada, aprovacao: string, justificativa: ?string}>  $disciplinas
      */
     private function calcularResumoEtapa(
         array $disciplinas,
@@ -239,7 +246,7 @@ class Inscricao extends Model
     }
 
     /**
-     * @return list<array{slot: string, disciplina: DisciplinaOfertada, aprovacao: string}>
+     * @return list<array{slot: string, disciplina: DisciplinaOfertada, aprovacao: string, justificativa: ?string}>
      */
     public function disciplinasParaAprovacaoProfessor(): array
     {
@@ -406,6 +413,16 @@ class Inscricao extends Model
     public function statusLabel(): string
     {
         return $this->status?->label() ?? InscricaoStatus::Inscrito->label();
+    }
+
+    public function justificativaParaSlot(string $slot): ?string
+    {
+        return match ($slot) {
+            'obrigatoria' => $this->justificativa_disciplina_obrigatoria,
+            'opcional_1' => $this->justificativa_disciplina_opcional_1,
+            'opcional_2' => $this->justificativa_disciplina_opcional_2,
+            default => null,
+        };
     }
 
     /**

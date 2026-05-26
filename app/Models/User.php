@@ -74,10 +74,30 @@ class User extends Authenticatable implements Auditable, CanResetPassword, Filam
     public function canAccessPanel(Panel $panel): bool
     {
         if ($panel->getId() === 'admin') {
-            return $this->hasRole('Admin');
+            return $this->isAdmin();
         }
 
         return true;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('Admin');
+    }
+
+    public function canAccessSecretaria(): bool
+    {
+        return $this->hasAnyRole(['Admin', 'Secretario']);
+    }
+
+    public function canAccessProfessor(): bool
+    {
+        return $this->hasAnyRole(['Admin', 'Professor']);
+    }
+
+    public function canDeleteSecretariaResources(): bool
+    {
+        return $this->isAdmin();
     }
 
     /**

@@ -82,8 +82,11 @@ class InscricaoController extends Controller
                 'numero_usp' => $alunoUsp ? ($validated['numero_usp'] ?? null) : null,
                 'dados_etapa_2' => null,
                 'disciplina_obrigatoria_id' => null,
+                'justificativa_disciplina_obrigatoria' => null,
                 'disciplina_opcional_1_id' => null,
+                'justificativa_disciplina_opcional_1' => null,
                 'disciplina_opcional_2_id' => null,
+                'justificativa_disciplina_opcional_2' => null,
                 'concluido_em' => null,
             ]);
         } else {
@@ -184,8 +187,11 @@ class InscricaoController extends Controller
 
         $inscricao->update([
             'disciplina_obrigatoria_id' => $request->integer('disciplina_obrigatoria_id'),
+            'justificativa_disciplina_obrigatoria' => $validated['justificativa_disciplina_obrigatoria'],
             'disciplina_opcional_1_id' => $op1,
+            'justificativa_disciplina_opcional_1' => $validated['justificativa_disciplina_opcional_1'] ?? null,
             'disciplina_opcional_2_id' => $op2,
+            'justificativa_disciplina_opcional_2' => $validated['justificativa_disciplina_opcional_2'] ?? null,
             'etapa_concluida' => 3,
             'concluido_em' => now(),
             'status' => InscricaoStatus::Inscrito,

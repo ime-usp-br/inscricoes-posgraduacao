@@ -14,6 +14,14 @@ class UpdateDisciplinaOfertadaRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'professor_nome' => $this->filled('professor_nome') ? $this->input('professor_nome') : null,
+            'professor_email' => $this->filled('professor_email') ? $this->input('professor_email') : null,
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -26,10 +34,10 @@ class UpdateDisciplinaOfertadaRequest extends FormRequest
 
         return [
             'periodo_id' => 'required|integer|exists:periodos,id',
-            'departamento' => 'required|string|in:MAT,MAC,MAP,MAE',
+            'departamento' => 'required|string|in:MAT,MAC,MAP,MAE,MPM',
             'nome' => 'required|string|max:255',
-            'professor_nome' => 'required|string|max:255',
-            'professor_email' => 'required|email:rfc,dns|max:255',
+            'professor_nome' => 'nullable|string|max:255',
+            'professor_email' => 'nullable|email:rfc,dns|max:255',
             // evita duplicidade dentro do mesmo período
             'codigo' => [
                 'required',
@@ -53,13 +61,11 @@ class UpdateDisciplinaOfertadaRequest extends FormRequest
             'periodo_id.required' => 'O período é obrigatório.',
             'periodo_id.exists' => 'O período informado não existe.',
             'departamento.required' => 'O departamento é obrigatório.',
-            'departamento.in' => 'O departamento deve ser MAT, MAC, MAP ou MAE.',
+            'departamento.in' => 'O departamento deve ser MAT, MAC, MAP, MAE ou MPM.',
             'codigo.required' => 'O código numérico é obrigatório.',
             'codigo.regex' => 'O código numérico deve conter exatamente 4 dígitos.',
             'codigo.unique' => 'Já existe uma disciplina com esse código nesse período.',
             'nome.required' => 'O nome da disciplina é obrigatório.',
-            'professor_nome.required' => 'O nome do professor é obrigatório.',
-            'professor_email.required' => 'O e-mail do professor é obrigatório.',
             'professor_email.email' => 'O e-mail do professor deve ser válido.',
         ];
     }

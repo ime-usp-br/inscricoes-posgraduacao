@@ -40,6 +40,26 @@
     ];
 @endphp
 
+@php
+    $disciplinasSelecionadas = [
+        [
+            'rotulo' => 'Disciplina obrigatória',
+            'disciplina' => $inscricao->disciplinaObrigatoria,
+            'justificativa' => $inscricao->justificativa_disciplina_obrigatoria,
+        ],
+        [
+            'rotulo' => 'Opcional 1',
+            'disciplina' => $inscricao->disciplinaOpcional1,
+            'justificativa' => $inscricao->justificativa_disciplina_opcional_1,
+        ],
+        [
+            'rotulo' => 'Opcional 2',
+            'disciplina' => $inscricao->disciplinaOpcional2,
+            'justificativa' => $inscricao->justificativa_disciplina_opcional_2,
+        ],
+    ];
+@endphp
+
 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
     <div class="p-6 lg:p-8 text-gray-900 dark:text-gray-100 space-y-4">
         <h3 class="text-lg font-semibold border-b border-gray-200 dark:border-gray-600 pb-2">Etapa 1</h3>
@@ -127,24 +147,20 @@
                 <dt class="font-medium text-gray-600 dark:text-gray-400">Período</dt>
                 <dd>{{ $inscricao->periodo?->ano }}/{{ $inscricao->periodo?->semestre }}</dd>
             </div>
-            @if ($inscricao->disciplinaObrigatoria)
-                <div>
-                    <dt class="font-medium text-gray-600 dark:text-gray-400">Disciplina obrigatória</dt>
-                    <dd>{{ $inscricao->disciplinaObrigatoria->codigo_completo }} — {{ $inscricao->disciplinaObrigatoria->nome }}</dd>
-                </div>
-            @endif
-            @if ($inscricao->disciplinaOpcional1)
-                <div>
-                    <dt class="font-medium text-gray-600 dark:text-gray-400">Opcional 1</dt>
-                    <dd>{{ $inscricao->disciplinaOpcional1->codigo_completo }} — {{ $inscricao->disciplinaOpcional1->nome }}</dd>
-                </div>
-            @endif
-            @if ($inscricao->disciplinaOpcional2)
-                <div>
-                    <dt class="font-medium text-gray-600 dark:text-gray-400">Opcional 2</dt>
-                    <dd>{{ $inscricao->disciplinaOpcional2->codigo_completo }} — {{ $inscricao->disciplinaOpcional2->nome }}</dd>
-                </div>
-            @endif
+            @foreach ($disciplinasSelecionadas as $item)
+                @if ($item['disciplina'])
+                    <div>
+                        <dt class="font-medium text-gray-600 dark:text-gray-400">{{ $item['rotulo'] }}</dt>
+                        <dd class="space-y-2">
+                            <div>{{ $item['disciplina']->codigo_completo }} — {{ $item['disciplina']->nome }}</div>
+                            <div>
+                                <span class="font-medium text-gray-600 dark:text-gray-400">Justificativa:</span>
+                                <p class="mt-1 whitespace-pre-line">{{ $item['justificativa'] ?: '—' }}</p>
+                            </div>
+                        </dd>
+                    </div>
+                @endif
+            @endforeach
             <div>
                 <dt class="font-medium text-gray-600 dark:text-gray-400">Concluída em</dt>
                 <dd>{{ optional($inscricao->concluido_em)->format('d/m/Y H:i') ?? '—' }}</dd>

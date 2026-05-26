@@ -114,7 +114,7 @@ class InscricaoProfessorController extends Controller
         if ($inscricao->aprovacaoSecretariaParaSlot($slot) !== AprovacaoSecretariaDisciplina::Aprovado) {
             return redirect()
                 ->route('professor.inscricoes.show', $inscricao)
-                ->withErrors(['aprovacao' => 'Esta disciplina ainda não foi aprovada pela secretaria.']);
+                ->withErrors(['aprovacao' => 'Esta disciplina ainda não está disponível para avaliação nesta etapa.']);
         }
 
         $aprovacaoAtual = $inscricao->aprovacaoProfessorParaSlot($slot);

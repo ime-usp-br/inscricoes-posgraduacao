@@ -23,7 +23,7 @@
             <select name="departamento" required
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                 <option value="">Selecione</option>
-                @foreach (['MAT','MAC','MAP','MAE'] as $dep)
+                @foreach (['MAT','MAC','MAP','MAE','MPM'] as $dep)
                     <option value="{{ $dep }}" @selected(old('departamento', $disciplina->departamento) === $dep)>{{ $dep }}</option>
                 @endforeach
             </select>
@@ -55,8 +55,8 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-            <label class="block text-sm font-medium text-gray-700">Nome do professor</label>
-            <input name="professor_nome" required
+            <label class="block text-sm font-medium text-gray-700">Nome do professor <span class="text-gray-500">(opcional)</span></label>
+            <input name="professor_nome"
                    value="{{ old('professor_nome', $disciplina->professor_nome) }}"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
             @error('professor_nome')
@@ -65,21 +65,14 @@
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">E-mail do professor</label>
-            <input name="professor_email" type="email" required
+            <label class="block text-sm font-medium text-gray-700">E-mail do professor <span class="text-gray-500">(opcional)</span></label>
+            <input name="professor_email" type="email"
                    value="{{ old('professor_email', $disciplina->professor_email) }}"
                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
             @error('professor_email')
                 <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
             @enderror
         </div>
-    </div>
-
-    <div class="rounded-md bg-gray-50 border border-gray-200 p-3 text-sm text-gray-700">
-        <span class="font-semibold">Código completo:</span>
-        <span>
-            {{ strtoupper(old('departamento', $disciplina->departamento ?? '')) }}{{ str_pad((string) old('codigo', $disciplina->codigo ?? ''), 4, '0', STR_PAD_LEFT) }}
-        </span>
     </div>
 </div>
 

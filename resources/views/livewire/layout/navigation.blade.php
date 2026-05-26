@@ -16,6 +16,12 @@ new class extends Component
     }
 }; ?>
 
+@php
+    $user = auth()->user();
+    $secretariaActive = request()->routeIs('secretaria', 'periodo.*', 'disciplina-ofertada.*', 'inscricoes.*');
+    $professorActive = request()->routeIs('professor*');
+@endphp
+
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,11 +40,13 @@ new class extends Component
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    @if(auth()->user()?->hasRole('Admin'))
-                        <x-nav-link :href="route('secretaria')" :active="request()->routeIs('secretaria*')" wire:navigate>
+                    @if($user?->canAccessSecretaria())
+                        <x-nav-link :href="route('secretaria')" :active="$secretariaActive" wire:navigate>
                             {{ __('Secretaria') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('professor')" :active="request()->routeIs('professor*')" wire:navigate>
+                    @endif
+                    @if($user?->canAccessProfessor())
+                        <x-nav-link :href="route('professor')" :active="$professorActive" wire:navigate>
                             {{ __('Professor') }}
                         </x-nav-link>
                     @endif
@@ -65,7 +73,7 @@ new class extends Component
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
-                        @if(auth()->user()?->hasRole('Admin'))
+                        @if($user?->isAdmin())
                             <x-dropdown-link :href="url('/admin')">
                                 {{ __('Painel Admin') }}
                             </x-dropdown-link>
@@ -96,14 +104,16 @@ new class extends Component
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            @if(auth()->user()?->hasRole('Admin'))
-                <x-responsive-nav-link :href="route('secretaria')" :active="request()->routeIs('secretaria*')" wire:navigate>
-                    {{ __('Secretaria') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('professor')" :active="request()->routeIs('professor*')" wire:navigate>
-                    {{ __('Professor') }}
-                </x-responsive-nav-link>
-            @endif
+                @if($user?->canAccessSecretaria())
+                    <x-responsive-nav-link :href="route('secretaria')" :active="$secretariaActive" wire:navigate>
+                        {{ __('Secretaria') }}
+                    </x-responsive-nav-link>
+                @endif
+                @if($user?->canAccessProfessor())
+                    <x-responsive-nav-link :href="route('professor')" :active="$professorActive" wire:navigate>
+                        {{ __('Professor') }}
+                    </x-responsive-nav-link>
+                @endif
         </div>
 
         <!-- Responsive Settings Options -->
@@ -118,7 +128,7 @@ new class extends Component
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
 
-                @if(auth()->user()?->hasRole('Admin'))
+                @if($user?->isAdmin())
                     <x-responsive-nav-link :href="url('/admin')">
                         {{ __('Painel Admin') }}
                     </x-responsive-nav-link>

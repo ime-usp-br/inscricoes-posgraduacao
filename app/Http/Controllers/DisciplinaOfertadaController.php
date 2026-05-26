@@ -48,7 +48,7 @@ class DisciplinaOfertadaController extends Controller
             });
         }
 
-        if (in_array($departamento, ['MAT', 'MAC', 'MAP', 'MAE'], true)) {
+        if (in_array($departamento, ['MAT', 'MAC', 'MAP', 'MAE', 'MPM'], true)) {
             $query->where('departamento', $departamento);
         }
 
@@ -136,6 +136,8 @@ class DisciplinaOfertadaController extends Controller
 
     public function destroy(DisciplinaOfertada $disciplina_ofertada): RedirectResponse
     {
+        abort_unless(auth()->user()?->canDeleteSecretariaResources(), 403, 'Somente administradores podem excluir disciplinas.');
+
         $disciplina_ofertada->delete();
 
         return redirect()->route('disciplina-ofertada.index')

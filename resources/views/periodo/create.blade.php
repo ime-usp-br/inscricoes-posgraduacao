@@ -26,6 +26,10 @@
                         Preencha os campos abaixo para cadastrar o período de inscrições.
                     </p>
 
+                    <p class="mt-2 text-sm text-gray-600">
+                        O status do período é calculado automaticamente pelo sistema no horário de Brasília.
+                    </p>
+
                     {{-- Ano/Semestre --}}
                     <div class="flex gap-4 mb-4">
 
@@ -50,22 +54,6 @@
                         </div>
 
                     </div>
-
-                    {{-- Status --}}
-                    <div class="mb-4">
-                        <label for="status" class="block font-medium text-sm text-gray-700">Status</label>
-                        <select name="status" id="status"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                required>
-                            <option value="">Selecione</option>
-                            <option value="aberto" @selected(old('status') === 'aberto')>Aberto</option>
-                            <option value="fechado" @selected(old('status') === 'fechado')>Fechado</option>
-                        </select>
-                        @error('status')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
 
                         {{-- Início das Inscrições --}}
                         <div>

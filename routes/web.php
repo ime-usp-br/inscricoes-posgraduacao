@@ -25,7 +25,7 @@ Route::view('profile', 'profile')
 
 require __DIR__.'/auth.php';
 
-Route::middleware(['auth', 'verified', 'admin'])->group(function (): void {
+Route::middleware(['auth', 'verified', 'role.any:Admin,Secretario'])->group(function (): void {
     Route::view('/secretaria', 'secretaria.index')->name('secretaria');
 
     Route::resource('periodo', PeriodoController::class);
@@ -46,6 +46,9 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function (): void {
     Route::post('/inscricoes/{inscricao}/reprovar-secretaria', [InscricaoAdminController::class, 'reprovarDisciplinaSecretaria'])
         ->name('inscricoes.reprovar-secretaria');
 
+});
+
+Route::middleware(['auth', 'verified', 'role.any:Admin,Professor'])->group(function (): void {
     Route::view('/professor', 'professor.index')->name('professor');
 
     Route::get('/professor/inscricoes', [InscricaoProfessorController::class, 'index'])->name('professor.inscricoes.index');

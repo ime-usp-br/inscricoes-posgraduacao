@@ -29,7 +29,7 @@
                         <div class="md:col-span-4">
                             <label class="block text-sm font-medium text-gray-700">Busca</label>
                             <input name="q" value="{{ $search }}"
-                                   placeholder="nome, professor, email ou MAC0123..."
+                                   placeholder="nome, professor, email ou MPM0123..."
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                         </div>
 
@@ -38,7 +38,7 @@
                             <select name="departamento"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">Todos</option>
-                                @foreach (['MAT','MAC','MAP','MAE'] as $dep)
+                                @foreach (['MAT','MAC','MAP','MAE','MPM'] as $dep)
                                     <option value="{{ $dep }}" @selected($departamento === $dep)>{{ $dep }}</option>
                                 @endforeach
                             </select>
@@ -113,17 +113,19 @@
                                             </a>
                                         </td>
                                         <td class="px-4 py-4">{{ $d->nome }}</td>
-                                        <td class="px-4 py-4">{{ $d->professor_nome }}</td>
-                                        <td class="px-4 py-4">{{ $d->professor_email }}</td>
+                                        <td class="px-4 py-4">{{ $d->professor_nome ?: '—' }}</td>
+                                        <td class="px-4 py-4">{{ $d->professor_email ?: '—' }}</td>
                                         <td class="px-4 py-4">
                                             {{ $d->periodo?->ano }}/{{ $d->periodo?->semestre }}
                                         </td>
                                         <td class="px-4 py-4 text-right rounded-r-lg">
                                             <div class="inline-flex flex-wrap items-center justify-end gap-2">
                                                 <x-table-action-edit :href="route('disciplina-ofertada.edit', $d)" />
-                                                <x-table-action-delete
-                                                    :action="route('disciplina-ofertada.destroy', $d)"
-                                                    confirm="Tem certeza que deseja excluir esta disciplina?" />
+                                                @if (auth()->user()?->canDeleteSecretariaResources())
+                                                    <x-table-action-delete
+                                                        :action="route('disciplina-ofertada.destroy', $d)"
+                                                        confirm="Tem certeza que deseja excluir esta disciplina?" />
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

@@ -1,17 +1,21 @@
 <x-app-layout>
     <x-slot name="header">
+        @php
+            $voltarHref = auth()->user()?->canAccessSecretaria() ? route('secretaria') : route('dashboard');
+            $voltarLabel = auth()->user()?->canAccessSecretaria() ? 'Voltar à Secretaria' : 'Voltar ao dashboard';
+        @endphp
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 Professor
             </h2>
-            <x-back-link :href="route('secretaria')" label="Voltar à Secretaria" />
+            <x-back-link :href="$voltarHref" :label="$voltarLabel" />
         </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
             <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-                Avaliação final das inscrições com disciplinas já aprovadas pela secretaria.
+                Avaliação final das inscrições elegíveis para análise do professor.
             </p>
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-700">
@@ -20,7 +24,7 @@
                         Inscrições
                     </h3>
                     <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Lista com filtros por nome, período e disciplina. Apenas inscrições com ao menos uma disciplina aprovada pela secretaria.
+                        Lista com filtros por nome, período e disciplina para avaliação final.
                     </p>
                     <div class="flex flex-col gap-2">
                         <a href="{{ route('professor.inscricoes.index') }}"

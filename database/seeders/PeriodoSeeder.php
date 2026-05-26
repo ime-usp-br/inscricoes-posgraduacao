@@ -17,7 +17,6 @@ class PeriodoSeeder extends Seeder
             [
                 'data_inicio_inscricao' => now()->subWeek(),
                 'data_fim_inscricao' => now()->addMonths(2),
-                'status' => 'aberto',
             ],
         );
     }

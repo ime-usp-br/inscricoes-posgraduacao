@@ -17,6 +17,8 @@ class AdminMenuLinkTest extends TestCase
 
         // Create roles
         Role::create(['name' => 'Admin', 'guard_name' => 'web']);
+        Role::create(['name' => 'Secretario', 'guard_name' => 'web']);
+        Role::create(['name' => 'Professor', 'guard_name' => 'web']);
         Role::create(['name' => 'usp_user', 'guard_name' => 'web']);
     }
 
@@ -60,5 +62,35 @@ class AdminMenuLinkTest extends TestCase
         // Verify admin can access panel
         $panelResponse = $this->get('/admin');
         $panelResponse->assertOk();
+    }
+
+    public function test_secretario_sees_only_secretaria_link(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $this->actingAs($secretario);
+
+        $response = $this->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Secretaria');
+        $response->assertDontSee('Professor');
+        $response->assertDontSee('Painel Admin');
+    }
+
+    public function test_professor_sees_only_professor_link(): void
+    {
+        $professor = User::factory()->create();
+        $professor->assignRole('Professor');
+
+        $this->actingAs($professor);
+
+        $response = $this->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Professor');
+        $response->assertDontSee('Secretaria');
+        $response->assertDontSee('Painel Admin');
     }
 }

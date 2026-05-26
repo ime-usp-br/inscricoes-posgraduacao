@@ -21,6 +21,8 @@ class InscricaoAprovacaoProfessorTest extends TestCase
         parent::setUp();
 
         Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Professor', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Secretario', 'guard_name' => 'web']);
     }
 
     #[Test]
@@ -95,8 +97,8 @@ class InscricaoAprovacaoProfessorTest extends TestCase
     #[Test]
     public function professor_can_toggle_between_approved_and_rejected(): void
     {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
+        $professor = User::factory()->create();
+        $professor->assignRole('Professor');
 
         $inscricao = Inscricao::factory()
             ->concluida()
@@ -106,18 +108,77 @@ class InscricaoAprovacaoProfessorTest extends TestCase
                 'aprovacao_obrigatoria_professor' => AprovacaoProfessorDisciplina::Aprovado,
             ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($professor)
             ->post(route('professor.inscricoes.reprovar', $inscricao), ['disciplina' => 'obrigatoria'])
             ->assertRedirect(route('professor.inscricoes.show', $inscricao));
 
         $inscricao->refresh();
         $this->assertSame(AprovacaoProfessorDisciplina::Reprovado, $inscricao->aprovacao_obrigatoria_professor);
 
-        $this->actingAs($admin)
+        $this->actingAs($professor)
             ->post(route('professor.inscricoes.aprovar', $inscricao), ['disciplina' => 'obrigatoria']);
 
         $inscricao->refresh();
         $this->assertSame(AprovacaoProfessorDisciplina::Aprovado, $inscricao->aprovacao_obrigatoria_professor);
+    }
+
+    #[Test]
+    public function professor_role_can_access_professor_index_and_show(): void
+    {
+        $professor = User::factory()->create();
+        $professor->assignRole('Professor');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create([
+                'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+            ]);
+
+        $this->actingAs($professor)
+            ->get(route('professor.inscricoes.index'))
+            ->assertOk()
+            ->assertSee($inscricao->nome_completo);
+
+        $this->actingAs($professor)
+            ->get(route('professor.inscricoes.show', $inscricao))
+            ->assertOk()
+            ->assertSee('Aprovação pelo Professor (2ª etapa)');
+    }
+
+    #[Test]
+    public function professor_cannot_access_secretaria_routes(): void
+    {
+        $professor = User::factory()->create();
+        $professor->assignRole('Professor');
+
+        $this->actingAs($professor)
+            ->get(route('secretaria'))
+            ->assertForbidden();
+
+        $this->actingAs($professor)
+            ->get(route('inscricoes.index'))
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function professor_show_hides_secretaria_section_for_professor_role(): void
+    {
+        $professor = User::factory()->create();
+        $professor->assignRole('Professor');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create([
+                'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+            ]);
+
+        $this->actingAs($professor)
+            ->get(route('professor.inscricoes.show', $inscricao))
+            ->assertOk()
+            ->assertDontSee('Aprovação pela Secretaria (1ª etapa)')
+            ->assertSee('Aprovação pelo Professor (2ª etapa)');
     }
 
     #[Test]

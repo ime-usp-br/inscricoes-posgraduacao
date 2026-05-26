@@ -9,7 +9,7 @@ class AprovarDisciplinaProfessorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasRole('Admin') ?? false;
+        return $this->user()?->canAccessProfessor() ?? false;
     }
 
     /**

@@ -161,6 +161,15 @@
                             </div>
 
                             <fieldset class="space-y-2">
+                                <legend class="text-sm font-medium">Formado na graduação USP?</legend>
+                                <div class="flex gap-4">
+                                    <label class="inline-flex items-center gap-2"><input type="radio" name="formado_graduacao_usp" value="sim" {{ old('formado_graduacao_usp') === 'sim' ? 'checked' : '' }} required /> Sim</label>
+                                    <label class="inline-flex items-center gap-2"><input type="radio" name="formado_graduacao_usp" value="nao" {{ old('formado_graduacao_usp') === 'nao' ? 'checked' : '' }} /> Não</label>
+                                </div>
+                                @error('formado_graduacao_usp')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+                            </fieldset>
+
+                            <fieldset class="space-y-2">
                                 <legend class="text-sm font-medium">Já fez algum curso na USP anteriormente?</legend>
                                 <div class="flex gap-4">
                                     <label class="inline-flex items-center gap-2"><input type="radio" name="curso_usp_anterior" value="sim" {{ old('curso_usp_anterior') === 'sim' ? 'checked' : '' }} required /> Sim</label>

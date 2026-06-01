@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @source "../views/**/*.blade.php";
+@source "../views/vendor/pagination/**/*.blade.php";
 @source "../../app/Filament/**/*.php";
 @source "../views/filament/**/*.blade.php";
 @source "../../vendor/filament/**/*.blade.php";

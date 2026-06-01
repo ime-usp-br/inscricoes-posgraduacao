@@ -43,6 +43,7 @@ class InscricaoEtapa2Request extends FormRequest
         $rules = [
             'pos_graduacao_externo' => 'required|in:sim,nao',
             'nome_programa_externo' => 'required_if:pos_graduacao_externo,sim|nullable|string|max:500',
+            'formado_graduacao_usp' => 'required|in:sim,nao',
             'curso_usp_anterior' => 'required|in:sim,nao',
             'data_nascimento' => 'required|date',
             'genero' => 'required|string|max:64',
@@ -96,6 +97,8 @@ class InscricaoEtapa2Request extends FormRequest
             'pdf_comprovante_matricula.required' => 'Envie o PDF do comprovante de matrícula.',
             'pdf_historico_escolar.required' => 'Envie o PDF do histórico escolar.',
             'nome_programa_externo.required_if' => 'Especifique o nome do programa de pós-graduação externo.',
+            'formado_graduacao_usp.required' => 'Informe se é formado na graduação USP.',
+            'formado_graduacao_usp.in' => 'A resposta deve ser Sim ou Não.',
             'pdf_passaporte.required_if' => 'Envie o PDF do passaporte.',
             'pdf_visto_estudante_mercosul.required_if' => 'Envie o PDF do visto estudante ou Mercosul.',
         ];

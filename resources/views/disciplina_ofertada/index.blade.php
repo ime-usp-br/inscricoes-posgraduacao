@@ -139,7 +139,7 @@
                             </tbody>
                     </x-data-table>
 
-                    <div>
+                    <div class="pt-2">
                         {{ $disciplinas->links() }}
                     </div>
                 </div>

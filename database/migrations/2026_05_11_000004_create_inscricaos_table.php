@@ -34,6 +34,14 @@ return new class extends Migration
             $table->string('aprovacao_obrigatoria_professor', 20)->nullable();
             $table->string('aprovacao_opcional_1_professor', 20)->nullable();
             $table->string('aprovacao_opcional_2_professor', 20)->nullable();
+            $table->json('pagamentos_disciplinas')->nullable();
+            $table->string('pix_idfpix', 35)->nullable();
+            $table->string('pix_status', 20)->nullable();
+            $table->decimal('pix_valor', 9, 2)->nullable();
+            $table->unsignedTinyInteger('pix_quantidade_disciplinas')->nullable();
+            $table->text('pix_qr_code')->nullable();
+            $table->timestamp('pix_gerado_em')->nullable();
+            $table->timestamp('pix_pago_em')->nullable();
             $table->timestamps();
         });
     }

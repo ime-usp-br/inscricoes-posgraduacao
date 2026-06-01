@@ -15,6 +15,14 @@
                     <p class="text-lg font-semibold text-green-700 dark:text-green-400">
                         Sua inscrição foi registrada com sucesso.
                     </p>
+                    @if ($inscricao->pix_pago_em)
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            Pagamento Pix confirmado em {{ $inscricao->pix_pago_em->format('d/m/Y H:i') }}
+                            @if ($inscricao->pix_valor)
+                                — R$ {{ number_format((float) $inscricao->pix_valor, 2, ',', '.') }}
+                            @endif
+                        </p>
+                    @endif
                     <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                         Período: <strong>{{ $periodo->ano }}/{{ $periodo->semestre }}</strong>
                         — {{ $inscricao->nome_completo }} ({{ $inscricao->email }})

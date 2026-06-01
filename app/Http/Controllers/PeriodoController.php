@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ReplicadoServiceException;
 use App\Http\Requests\StorePeriodoRequest;
 use App\Http\Requests\UpdatePeriodoRequest;
 use App\Models\Periodo;
+use App\Services\ReplicadoDisciplinaOfertadaService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -39,45 +41,59 @@ class PeriodoController extends Controller
         return view('periodo.create', compact('periodo'));
     }
 
-    public function confirmar(StorePeriodoRequest $request): View
-    {
-        // if(!Auth::check()){
-        //     return redirect()->route('login');
-        // }elseif(!Auth::user()->hasRole('admin')){
-        //     abort(403);
-        // }
-
+    public function confirmar(
+        StorePeriodoRequest $request,
+        ReplicadoDisciplinaOfertadaService $replicadoDisciplinas,
+    ): View|RedirectResponse {
         /** @var array{ano:int,semestre:int,data_inicio_inscricao:string,data_fim_inscricao:string} $validated */
         $validated = $request->validated();
 
-        $disciplinas = DB::select("
-            SELECT *
-            FROM OFERECIMENTO
-            WHERE dtainiofe > '{$validated['data_inicio_inscricao']}' AND
-            (sgldis LIKE 'MAC%' OR sgldis LIKE 'MAT%' OR sgldis LIKE 'MAE%' OR sgldis LIKE 'MAP%')
-            ORDER BY sgldis;
-        ");
+        try {
+            $disciplinasReplicado = $replicadoDisciplinas->listarParaPeriodo(
+                (string) $validated['data_inicio_inscricao']
+            );
+        } catch (ReplicadoServiceException $exception) {
+            return redirect()
+                ->route('periodo.create')
+                ->withInput()
+                ->withErrors(['replicado' => $exception->getMessage()]);
+        }
 
-        dd($disciplinas);
-
-        return view('periodo.confirmar', compact('validated'));
+        return view('periodo.confirmar', compact('validated', 'disciplinasReplicado'));
     }
 
-    public function salvar(StorePeriodoRequest $request): RedirectResponse
-    {
-        // if(!Auth::check()){
-        //     return redirect()->route('login');
-        // }elseif(!Auth::user()->hasRole('admin')){
-        //     abort(403);
-        // }
-
+    public function salvar(
+        StorePeriodoRequest $request,
+        ReplicadoDisciplinaOfertadaService $replicadoDisciplinas,
+    ): RedirectResponse {
         /** @var array{ano:int,semestre:int,data_inicio_inscricao:string,data_fim_inscricao:string} $validated */
         $validated = $request->validated();
 
-        $periodo = Periodo::create($validated);
+        try {
+            $periodo = DB::transaction(function () use ($validated, $replicadoDisciplinas): Periodo {
+                $periodo = Periodo::create($validated);
+
+                $replicadoDisciplinas->importarParaPeriodo(
+                    $periodo,
+                    (string) $validated['data_inicio_inscricao']
+                );
+
+                return $periodo;
+            });
+        } catch (ReplicadoServiceException $exception) {
+            return redirect()
+                ->route('periodo.create')
+                ->withInput()
+                ->withErrors(['replicado' => $exception->getMessage()]);
+        }
+
+        $totalDisciplinas = $periodo->disciplinasOfertadas()->count();
 
         return redirect()->route('periodo.show', $periodo)
-            ->with('success', 'Período criado com sucesso.');
+            ->with(
+                'success',
+                "Período criado com sucesso. {$totalDisciplinas} disciplina(s) importada(s) do Replicado."
+            );
     }
 
     /**

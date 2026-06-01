@@ -5,6 +5,8 @@ use App\Http\Controllers\DisciplinaOfertadaController;
 use App\Http\Controllers\InscricaoAdminController;
 use App\Http\Controllers\InscricaoProfessorController;
 use App\Http\Controllers\InscricaoController;
+use App\Http\Controllers\InscricaoPagamentoController;
+use App\Http\Controllers\WspixWebhookController;
 use App\Http\Controllers\PeriodoController;
 
 Route::get('/', [InscricaoController::class, 'home'])->name('home');
@@ -12,6 +14,11 @@ Route::post('/inscricao/etapa-1', [InscricaoController::class, 'storeEtapa1'])->
 Route::post('/inscricao/etapa-2', [InscricaoController::class, 'storeEtapa2'])->name('inscricao.etapa2');
 Route::post('/inscricao/etapa-3', [InscricaoController::class, 'storeEtapa3'])->name('inscricao.etapa3');
 Route::post('/inscricao/reiniciar', [InscricaoController::class, 'reiniciar'])->name('inscricao.reiniciar');
+Route::get('/inscricao/pagamento', [InscricaoPagamentoController::class, 'show'])->name('inscricao.pagamento');
+Route::post('/inscricao/pagamento/verificar', [InscricaoPagamentoController::class, 'verificar'])->name('inscricao.pagamento.verificar');
+Route::get('/inscricao/pagamento/{slot}', [InscricaoPagamentoController::class, 'redirectLegado'])
+    ->whereIn('slot', ['obrigatoria', 'opcional_1', 'opcional_2']);
+Route::post('/webhooks/wspix', WspixWebhookController::class)->name('webhooks.wspix');
 
 Route::view('welcome', 'welcome')->name('welcome');
 

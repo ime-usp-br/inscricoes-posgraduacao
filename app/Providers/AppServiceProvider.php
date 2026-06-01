@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\WspixClient;
 use App\Models\EmailLog;
+use App\Services\WspixHttpClient;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -13,6 +15,7 @@ use App\Policies\EmailLogPolicy;
 use App\Policies\PermissionPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\UserPolicy;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -25,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(WspixClient::class, WspixHttpClient::class);
     }
 
     /**
@@ -33,6 +36,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Paginator::defaultView('vendor.pagination.tailwind');
+        Paginator::defaultSimpleView('vendor.pagination.simple-tailwind');
+
         Password::defaults(function () {
             $rule = Password::min(8);
 

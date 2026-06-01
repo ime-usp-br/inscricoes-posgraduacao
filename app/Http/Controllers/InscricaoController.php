@@ -28,6 +28,10 @@ class InscricaoController extends Controller
         $inscricao = $this->inscricaoAtualNaSessao($periodoAtivo->id);
 
         if ($inscricao !== null && $inscricao->etapa_concluida >= 3) {
+            if ($inscricao->temPagamentoPendente()) {
+                return redirect()->route('inscricao.pagamento');
+            }
+
             return view('inscricao.concluida', [
                 'periodo' => $periodoAtivo,
                 'inscricao' => $inscricao,
@@ -132,6 +136,7 @@ class InscricaoController extends Controller
                 'tipo' => 'nao_usp',
                 'pos_graduacao_externo' => $validated['pos_graduacao_externo'],
                 'nome_programa_externo' => $validated['nome_programa_externo'] ?? null,
+                'formado_graduacao_usp' => $validated['formado_graduacao_usp'],
                 'curso_usp_anterior' => $validated['curso_usp_anterior'],
                 'data_nascimento' => $validated['data_nascimento'],
                 'genero' => $validated['genero'],
@@ -196,6 +201,17 @@ class InscricaoController extends Controller
             'concluido_em' => now(),
             'status' => InscricaoStatus::Inscrito,
         ]);
+
+        $inscricao->refresh();
+        $inscricao->load(['disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2']);
+        $inscricao->sincronizarPagamentosDisciplinas();
+        $inscricao->save();
+
+        if ($inscricao->temPagamentoPendente()) {
+            return redirect()
+                ->route('inscricao.pagamento')
+                ->with('success', 'Inscrição registrada. Conclua o pagamento via Pix para finalizar.');
+        }
 
         return redirect()->route('home')->with('success', 'Inscrição enviada com sucesso.');
     }

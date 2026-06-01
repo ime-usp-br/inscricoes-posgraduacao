@@ -28,5 +28,10 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="WSPIX_BASE_URL" value="https://wspix.test/api"/>
+        <env name="WSPIX_USERNAME" value="test-user"/>
+        <env name="WSPIX_PASSWORD" value="test-pass"/>
+        <env name="WSPIX_WEBHOOK_TOKEN" value="test-webhook-token"/>
+        <env name="WSPIX_VALOR_POR_DISCIPLINA" value="107"/>
     </php>
 </phpunit>

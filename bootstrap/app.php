@@ -29,6 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'role.any' => \App\Http\Middleware\EnsureUserHasAnyRole::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/wspix',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // This is where custom exception handling might be configured.

@@ -30,6 +30,48 @@
                 </li>
             </ul>
 
+            <div class="mt-6 border-t border-gray-200 pt-4">
+                <h2 class="text-lg font-semibold mb-2">Disciplinas do Replicado</h2>
+                <p class="text-sm text-gray-600 mb-4">
+                    Serão importadas automaticamente ao confirmar (ofertas com início após
+                    {{ \Carbon\Carbon::parse($validated['data_inicio_inscricao'])->format('d/m/Y') }},
+                    departamentos MAT, MAC, MAE, MAP e MPM).
+                </p>
+
+                @if (count($disciplinasReplicado) === 0)
+                    <p class="text-sm text-amber-700 bg-amber-50 rounded-md p-3">
+                        Nenhuma disciplina encontrada no Replicado para este critério.
+                        O período será criado sem disciplinas; cadastre-as manualmente depois.
+                    </p>
+                @else
+                    <p class="text-sm text-gray-700 mb-2">
+                        <strong>{{ count($disciplinasReplicado) }}</strong> disciplina(s) serão cadastradas:
+                    </p>
+                    <div class="overflow-x-auto max-h-64 border border-gray-200 rounded-md">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-600">Sigla</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-600">Departamento</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-600">Código</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-600">Nome</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @foreach ($disciplinasReplicado as $disciplina)
+                                    <tr>
+                                        <td class="px-3 py-2 font-mono">{{ $disciplina['sgldis'] }}</td>
+                                        <td class="px-3 py-2">{{ $disciplina['departamento'] }}</td>
+                                        <td class="px-3 py-2">{{ $disciplina['codigo'] }}</td>
+                                        <td class="px-3 py-2">{{ $disciplina['nome'] }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+
             {{-- Botão para confirmar --}}
             <form action="{{ route('periodo.salvar') }}" method="POST" class="mt-6">
                 @csrf

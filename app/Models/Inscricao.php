@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AprovacaoProfessorDisciplina;
 use App\Enums\AprovacaoSecretariaDisciplina;
 use App\Enums\InscricaoStatus;
+use App\Enums\PagamentoDisciplinaStatus;
 use App\Enums\ResumoAprovacaoInscricao;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,12 @@ use Illuminate\Support\Facades\Storage;
 
 class Inscricao extends Model
 {
+    /** @var list<string> */
+    public const DEPARTAMENTOS_COM_PAGAMENTO = ['MAC', 'MAE'];
+
+    /** @var list<string> */
+    public const SLOTS_DISCIPLINA = ['obrigatoria', 'opcional_1', 'opcional_2'];
+
     /** @use HasFactory<\Database\Factories\InscricaoFactory> */
     use HasFactory;
 
@@ -46,11 +53,23 @@ class Inscricao extends Model
         'aprovacao_obrigatoria_professor',
         'aprovacao_opcional_1_professor',
         'aprovacao_opcional_2_professor',
+        'pagamentos_disciplinas',
+        'pix_idfpix',
+        'pix_status',
+        'pix_valor',
+        'pix_quantidade_disciplinas',
+        'pix_qr_code',
+        'pix_gerado_em',
+        'pix_pago_em',
     ];
 
     protected $casts = [
         'aluno_usp' => 'boolean',
         'dados_etapa_2' => 'array',
+        'pagamentos_disciplinas' => 'array',
+        'pix_valor' => 'decimal:2',
+        'pix_gerado_em' => 'datetime',
+        'pix_pago_em' => 'datetime',
         'concluido_em' => 'datetime',
         'status' => InscricaoStatus::class,
         'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::class,
@@ -455,5 +474,180 @@ class Inscricao extends Model
     public function disciplinaOpcional2(): BelongsTo
     {
         return $this->belongsTo(DisciplinaOfertada::class, 'disciplina_opcional_2_id');
+    }
+
+    public function isCandidatoSujeitoAPagamento(): bool
+    {
+        if ($this->aluno_usp) {
+            return false;
+        }
+
+        return ($this->dados_etapa_2['formado_graduacao_usp'] ?? null) === 'nao';
+    }
+
+    public static function departamentoRequerPagamento(?DisciplinaOfertada $disciplina): bool
+    {
+        if ($disciplina === null) {
+            return false;
+        }
+
+        return in_array(strtoupper($disciplina->departamento), self::DEPARTAMENTOS_COM_PAGAMENTO, true);
+    }
+
+    /**
+     * @return array<string, DisciplinaOfertada|null>
+     */
+    public function disciplinasPorSlot(): array
+    {
+        return [
+            'obrigatoria' => $this->disciplinaObrigatoria,
+            'opcional_1' => $this->disciplinaOpcional1,
+            'opcional_2' => $this->disciplinaOpcional2,
+        ];
+    }
+
+    public function disciplinaNoSlot(string $slot): ?DisciplinaOfertada
+    {
+        return $this->disciplinasPorSlot()[$slot] ?? null;
+    }
+
+    public function sincronizarPagamentosDisciplinas(): void
+    {
+        if (! $this->isCandidatoSujeitoAPagamento()) {
+            $this->pagamentos_disciplinas = null;
+
+            return;
+        }
+
+        $pagamentos = [];
+        $existentes = is_array($this->pagamentos_disciplinas) ? $this->pagamentos_disciplinas : [];
+
+        foreach ($this->disciplinasPorSlot() as $slot => $disciplina) {
+            if (! self::departamentoRequerPagamento($disciplina)) {
+                continue;
+            }
+
+            $statusAtual = $existentes[$slot] ?? PagamentoDisciplinaStatus::Pendente->value;
+            $pagamentos[$slot] = $statusAtual === PagamentoDisciplinaStatus::Pago->value
+                ? PagamentoDisciplinaStatus::Pago->value
+                : PagamentoDisciplinaStatus::Pendente->value;
+        }
+
+        $this->pagamentos_disciplinas = $pagamentos === [] ? null : $pagamentos;
+    }
+
+    public function temPagamentoPendente(): bool
+    {
+        if (! is_array($this->pagamentos_disciplinas)) {
+            return false;
+        }
+
+        return in_array(PagamentoDisciplinaStatus::Pendente->value, $this->pagamentos_disciplinas, true);
+    }
+
+    public function primeiroSlotComPagamentoPendente(): ?string
+    {
+        if (! is_array($this->pagamentos_disciplinas)) {
+            return null;
+        }
+
+        foreach (self::SLOTS_DISCIPLINA as $slot) {
+            if (($this->pagamentos_disciplinas[$slot] ?? null) === PagamentoDisciplinaStatus::Pendente->value) {
+                return $slot;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<array{slot: string, disciplina: DisciplinaOfertada}>
+     */
+    public function disciplinasComPagamentoPendente(): array
+    {
+        if (! is_array($this->pagamentos_disciplinas)) {
+            return [];
+        }
+
+        $result = [];
+        foreach (self::SLOTS_DISCIPLINA as $slot) {
+            if (($this->pagamentos_disciplinas[$slot] ?? null) !== PagamentoDisciplinaStatus::Pendente->value) {
+                continue;
+            }
+
+            $disciplina = $this->disciplinaNoSlot($slot);
+            if ($disciplina === null) {
+                continue;
+            }
+
+            $result[] = ['slot' => $slot, 'disciplina' => $disciplina];
+        }
+
+        return $result;
+    }
+
+    public function pagamentoPendenteNoSlot(string $slot): bool
+    {
+        return ($this->pagamentos_disciplinas[$slot] ?? null) === PagamentoDisciplinaStatus::Pendente->value;
+    }
+
+    public function cpfCandidato(): ?string
+    {
+        $cpf = $this->dados_etapa_2['cpf'] ?? null;
+        if (! is_string($cpf) && ! is_int($cpf)) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D/', '', (string) $cpf);
+
+        return strlen($digits) === 11 ? $digits : null;
+    }
+
+    public function precisaGerarNovoPix(int $quantidadeAtual, float $valorAtual): bool
+    {
+        if ($this->pix_idfpix === null) {
+            return true;
+        }
+
+        if ($this->pix_status === 'Expirado') {
+            return true;
+        }
+
+        if ((int) $this->pix_quantidade_disciplinas !== $quantidadeAtual) {
+            return true;
+        }
+
+        if ($this->pix_valor !== null && round((float) $this->pix_valor, 2) !== round($valorAtual, 2)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function marcarTodasDisciplinasPagas(): void
+    {
+        if (! is_array($this->pagamentos_disciplinas)) {
+            return;
+        }
+
+        $pagamentos = [];
+        foreach ($this->pagamentos_disciplinas as $slot => $status) {
+            $pagamentos[$slot] = $status === PagamentoDisciplinaStatus::Pendente->value
+                ? PagamentoDisciplinaStatus::Pago->value
+                : $status;
+        }
+
+        $this->pagamentos_disciplinas = $pagamentos;
+    }
+
+    public function limparPix(): void
+    {
+        $this->pix_idfpix = null;
+        $this->pix_status = null;
+        $this->pix_valor = null;
+        $this->pix_quantidade_disciplinas = null;
+        $this->pix_qr_code = null;
+        $this->pix_gerado_em = null;
+        $this->pix_pago_em = null;
     }
 }

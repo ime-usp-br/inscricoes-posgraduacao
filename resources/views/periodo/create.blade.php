@@ -11,6 +11,12 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
+        @if ($errors->has('replicado'))
+            <div class="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-800">
+                {{ $errors->first('replicado') }}
+            </div>
+        @endif
+
         {{-- Formulário --}}
         <form action="{{ route('periodo.confirmar') }}" method="POST" class="mt-6 space-y-6">
             @csrf

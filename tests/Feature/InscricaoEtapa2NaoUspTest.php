@@ -38,6 +38,25 @@ class InscricaoEtapa2NaoUspTest extends TestCase
     }
 
     #[Test]
+    public function etapa_2_nao_usp_rejects_pdf_larger_than_one_megabyte(): void
+    {
+        $periodo = Periodo::factory()->create();
+        $inscricao = $this->inscricaoNaoUspNaoFormado($periodo->id);
+
+        $pdfPequeno = UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf');
+        $pdfGrande = UploadedFile::fake()->create('grande.pdf', 1025, 'application/pdf');
+
+        $payload = $this->payloadEtapa2NaoUspMinimo($pdfPequeno);
+        $payload['pdf_diploma_graduacao'] = $pdfGrande;
+
+        $this->from(route('home'))
+            ->withSession(['inscricao_id' => $inscricao->id])
+            ->post(route('inscricao.etapa2'), $payload)
+            ->assertRedirect(route('home'))
+            ->assertSessionHasErrors('pdf_diploma_graduacao');
+    }
+
+    #[Test]
     public function etapa_2_nao_usp_requires_formado_graduacao_usp(): void
     {
         $periodo = Periodo::factory()->create();

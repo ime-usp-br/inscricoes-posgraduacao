@@ -162,6 +162,37 @@ class InscricaoAprovacaoProfessorTest extends TestCase
     }
 
     #[Test]
+    public function professor_show_hides_cpf_and_rg_identity_documents(): void
+    {
+        $professor = User::factory()->create();
+        $professor->assignRole('Professor');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create([
+                'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+                'dados_etapa_2' => [
+                    'tipo' => 'nao_usp',
+                    'cpf' => '12345678901',
+                    'rg_rne_rnm' => '12.345.678-9',
+                    'pdf_cpf' => 'inscricoes/1/cpf.pdf',
+                    'pdf_rg_rne_rnm' => 'inscricoes/1/rg.pdf',
+                    'pdf_diploma_graduacao' => 'inscricoes/1/diploma.pdf',
+                ],
+            ]);
+
+        $this->actingAs($professor)
+            ->get(route('professor.inscricoes.show', $inscricao))
+            ->assertOk()
+            ->assertSee('12345678901')
+            ->assertSee('12.345.678-9')
+            ->assertDontSee('CPF (PDF)')
+            ->assertDontSee('RG / RNM / RNE (PDF)')
+            ->assertSee('Diploma de graduação');
+    }
+
+    #[Test]
     public function professor_show_hides_secretaria_section_for_professor_role(): void
     {
         $professor = User::factory()->create();

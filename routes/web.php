@@ -44,6 +44,8 @@ Route::middleware(['auth', 'verified', 'role.any:Admin,Secretario'])->group(func
     Route::resource('disciplina-ofertada', DisciplinaOfertadaController::class);
 
     Route::get('/inscricoes', [InscricaoAdminController::class, 'index'])->name('inscricoes.index');
+    Route::post('/inscricoes/aprovar-bloco-secretaria', [InscricaoAdminController::class, 'aprovarEmBlocoSecretaria'])
+        ->name('inscricoes.aprovar-bloco-secretaria');
     Route::get('/inscricoes/{inscricao}/arquivo/{campo}', [InscricaoAdminController::class, 'download'])
         ->where('campo', '[a-zA-Z0-9_]+')
         ->name('inscricoes.download');

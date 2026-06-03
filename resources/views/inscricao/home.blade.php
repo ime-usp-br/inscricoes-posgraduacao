@@ -120,12 +120,12 @@
                                 @error('unidade')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Comprovante de matrícula (PDF)</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Comprovante de matrícula (PDF, máx. 1 MB)</label>
                                 <input type="file" name="pdf_comprovante_matricula" accept="application/pdf" required class="mt-1 block w-full text-sm" />
                                 @error('pdf_comprovante_matricula')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Histórico escolar (PDF)</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Histórico escolar (PDF, máx. 1 MB)</label>
                                 <input type="file" name="pdf_historico_escolar" accept="application/pdf" required class="mt-1 block w-full text-sm" />
                                 @error('pdf_historico_escolar')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
@@ -288,7 +288,7 @@
                                 @error('estrangeiro')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
                             </fieldset>
 
-                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Documentos (PDF)</p>
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Documentos (PDF, máximo 1 MB cada)</p>
                             <div class="grid grid-cols-1 gap-3">
                                 <div><label class="text-sm">Diploma de graduação</label><input type="file" name="pdf_diploma_graduacao" accept="application/pdf" required class="mt-1 block w-full text-sm" />@error('pdf_diploma_graduacao')<p class="text-sm text-red-600">{{ $message }}</p>@enderror</div>
                                 <div><label class="text-sm">Histórico da graduação</label><input type="file" name="pdf_historico_graduacao" accept="application/pdf" required class="mt-1 block w-full text-sm" />@error('pdf_historico_graduacao')<p class="text-sm text-red-600">{{ $message }}</p>@enderror</div>

@@ -1,7 +1,17 @@
 @props([
     'inscricao',
     'downloadRoute' => 'inscricoes.download',
+    'ocultarDocumentosIdentidade' => false,
 ])
+
+@php
+    $pdfsIdentidadeOcultos = [
+        'pdf_cpf',
+        'pdf_rg_rne_rnm',
+        'pdf_passaporte',
+        'pdf_visto_estudante_mercosul',
+    ];
+@endphp
 
 @php
     $rotulos = [
@@ -113,21 +123,32 @@
                     </div>
                 @endforeach
             </dl>
-            <div class="pt-4 border-t border-gray-200 dark:border-gray-600 space-y-2">
-                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Documentos (PDF)</p>
-                <ul class="list-disc pl-5 space-y-1 text-sm">
-                    @foreach ($dados as $chave => $valor)
-                        @if (! str_starts_with($chave, 'pdf_') || ! is_string($valor) || $valor === '')
-                            @continue
-                        @endif
-                        <li>
-                            <a href="{{ route($downloadRoute, [$inscricao, $chave]) }}" class="text-blue-700 dark:text-blue-400 hover:underline">
-                                {{ $pdfRotulos[$chave] ?? $chave }}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
+            @php
+                $pdfsVisiveis = collect($dados)->filter(function ($valor, $chave) use ($ocultarDocumentosIdentidade, $pdfsIdentidadeOcultos) {
+                    if (! str_starts_with($chave, 'pdf_') || ! is_string($valor) || $valor === '') {
+                        return false;
+                    }
+                    if ($ocultarDocumentosIdentidade && in_array($chave, $pdfsIdentidadeOcultos, true)) {
+                        return false;
+                    }
+
+                    return true;
+                });
+            @endphp
+            @if ($pdfsVisiveis->isNotEmpty())
+                <div class="pt-4 border-t border-gray-200 dark:border-gray-600 space-y-2">
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Documentos (PDF)</p>
+                    <ul class="list-disc pl-5 space-y-1 text-sm">
+                        @foreach ($pdfsVisiveis as $chave => $valor)
+                            <li>
+                                <a href="{{ route($downloadRoute, [$inscricao, $chave]) }}" class="text-blue-700 dark:text-blue-400 hover:underline">
+                                    {{ $pdfRotulos[$chave] ?? $chave }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         @endif
     </div>
 </div>
@@ -165,7 +186,7 @@
                             @if (isset($pagamentos[$item['slot']]))
                                 <div>
                                     <span class="font-medium text-gray-600 dark:text-gray-400">Pagamento:</span>
-                                    {{ ($pagamentos[$item['slot']] ?? '') === 'pago' ? 'Pago' : 'Pendente' }}
+                                    {{ ($pagamentos[$item['slot']] ?? '') === 'pago' ? 'Pago' : 'Não pago' }}
                                 </div>
                             @endif
                         </dd>

@@ -45,6 +45,7 @@ class InscricaoProfessorController extends Controller
         }
 
         $inscricoes = $query->paginate(20)->withQueryString();
+        Inscricao::atribuirFlagDuplicataPorEmail($inscricoes);
 
         $periodos = Periodo::query()
             ->orderByDesc('ano')
@@ -80,6 +81,7 @@ class InscricaoProfessorController extends Controller
             'disciplinaOpcional1',
             'disciplinaOpcional2',
         ]);
+        Inscricao::atribuirFlagDuplicataPorEmail([$inscricao]);
 
         return view('inscricao.professor.show', compact('inscricao'));
     }

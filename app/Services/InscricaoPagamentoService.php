@@ -133,15 +133,15 @@ class InscricaoPagamentoService
 
         $payload = [
             'tipoPessoa' => 'PF',
-            'docPesOrg' => (int) $cpf,
-            'nomePesOrg' => $inscricao->nome_completo,
-            'valor' => $valor,
-            'infoCobranca' => sprintf(
-                'Inscrição pós-graduação %s — %d disciplina(s): %s',
+            'docPesOrg' => $cpf,
+            'nomePesOrg' => $this->sanitizeForWspix($inscricao->nome_completo, 150),
+            'valor' => $this->formatValorParaWspix($valor),
+            'infoCobranca' => $this->sanitizeForWspix(sprintf(
+                'Inscricao pos-graduacao %s - %d disciplina(s): %s',
                 $periodoLabel,
                 $quantidade,
                 $disciplinas
-            ),
+            ), 140),
             'emailPesOrg' => $inscricao->email,
             'expiracao' => (int) config('wspix.expiracao_segundos', 86400),
             'codigoFonteRecurso' => (int) config('wspix.codigo_fonte_recurso'),
@@ -193,5 +193,29 @@ class InscricaoPagamentoService
         $status = $dados['status'] ?? null;
 
         return in_array($status, ['Concluído', 'Pago'], true);
+    }
+
+    private function sanitizeForWspix(string $value, int $maxLength): string
+    {
+        $normalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        if (! is_string($normalized) || $normalized === '') {
+            $normalized = $value;
+        }
+
+        $normalized = preg_replace('/[^\x20-\x7E]/', '', $normalized) ?? '';
+        $normalized = preg_replace('/\s+/', ' ', $normalized) ?? '';
+        $normalized = trim($normalized);
+
+        if ($normalized === '') {
+            $normalized = 'Pagamento de inscricao';
+        }
+
+        return substr($normalized, 0, $maxLength);
+    }
+
+    private function formatValorParaWspix(float $valor): string
+    {
+        // WSPIX documenta "formato pt-BR" para valor decimal.
+        return number_format($valor, 2, ',', '');
     }
 }

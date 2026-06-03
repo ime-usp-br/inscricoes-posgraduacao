@@ -6,11 +6,15 @@ use App\Enums\AprovacaoProfessorDisciplina;
 use App\Enums\AprovacaoSecretariaDisciplina;
 use App\Enums\InscricaoStatus;
 use App\Enums\PagamentoDisciplinaStatus;
+use App\Enums\ResumoPagamentoInscricao;
 use App\Enums\ResumoAprovacaoInscricao;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class Inscricao extends Model
@@ -151,6 +155,52 @@ class Inscricao extends Model
     public function marcarDisciplinaReprovadaPelaSecretaria(string $slot): void
     {
         $this->marcarDisciplinaSecretaria($slot, AprovacaoSecretariaDisciplina::Reprovado);
+    }
+
+    public function podeAprovarEmBlocoSecretaria(): bool
+    {
+        if ($this->etapa_concluida < 3) {
+            return false;
+        }
+
+        foreach ($this->disciplinasParaAprovacaoSecretaria() as $item) {
+            if ($this->aprovacaoSecretariaParaSlot($item['slot']) !== AprovacaoSecretariaDisciplina::Aprovado) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Aprova todas as disciplinas da inscrição que ainda não estão aprovadas pela secretaria.
+     */
+    public function aprovarTodasDisciplinasPelaSecretaria(): int
+    {
+        $aprovadas = 0;
+
+        foreach ($this->disciplinasParaAprovacaoSecretaria() as $item) {
+            $field = match ($item['slot']) {
+                'obrigatoria' => 'aprovacao_obrigatoria_secretaria',
+                'opcional_1' => 'aprovacao_opcional_1_secretaria',
+                'opcional_2' => 'aprovacao_opcional_2_secretaria',
+                default => null,
+            };
+
+            if ($field === null || $this->{$field} === AprovacaoSecretariaDisciplina::Aprovado) {
+                continue;
+            }
+
+            $this->{$field} = AprovacaoSecretariaDisciplina::Aprovado;
+            $aprovadas++;
+        }
+
+        if ($aprovadas > 0) {
+            $this->sincronizarStatusSecretaria();
+            $this->save();
+        }
+
+        return $aprovadas;
     }
 
     private function marcarDisciplinaSecretaria(string $slot, AprovacaoSecretariaDisciplina $aprovacao): void
@@ -536,6 +586,77 @@ class Inscricao extends Model
         $this->pagamentos_disciplinas = $pagamentos === [] ? null : $pagamentos;
     }
 
+    public function resumoPagamento(): ResumoPagamentoInscricao
+    {
+        if (! is_array($this->pagamentos_disciplinas) || $this->pagamentos_disciplinas === []) {
+            return ResumoPagamentoInscricao::NaoAplicavel;
+        }
+
+        if ($this->temPagamentoPendente()) {
+            return ResumoPagamentoInscricao::NaoPago;
+        }
+
+        return ResumoPagamentoInscricao::Pago;
+    }
+
+    /**
+     * @param  Builder<Inscricao>  $query
+     * @return Builder<Inscricao>
+     */
+    public function scopeSemPagamentoAplicavel(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q): void {
+            $q->where('aluno_usp', true)
+                ->orWhere(function (Builder $inner): void {
+                    $inner->whereNull('dados_etapa_2')
+                        ->orWhere('dados_etapa_2->formado_graduacao_usp', '!=', 'nao');
+                })
+                ->orWhereNull('pagamentos_disciplinas');
+        });
+    }
+
+    /**
+     * @param  Builder<Inscricao>  $query
+     * @return Builder<Inscricao>
+     */
+    public function scopeComPagamentoPendente(Builder $query): Builder
+    {
+        $pendente = PagamentoDisciplinaStatus::Pendente->value;
+
+        return $query->whereNotNull('pagamentos_disciplinas')
+            ->where(function (Builder $q) use ($pendente): void {
+                $q->where('pagamentos_disciplinas->obrigatoria', $pendente)
+                    ->orWhere('pagamentos_disciplinas->opcional_1', $pendente)
+                    ->orWhere('pagamentos_disciplinas->opcional_2', $pendente);
+            });
+    }
+
+    /**
+     * @param  Builder<Inscricao>  $query
+     * @return Builder<Inscricao>
+     */
+    public function scopeComPagamentoConcluido(Builder $query): Builder
+    {
+        return $query->whereNotNull('pagamentos_disciplinas')
+            ->whereNot(function (Builder $sub): void {
+                $sub->comPagamentoPendente();
+            });
+    }
+
+    /**
+     * Pagos e não aplicáveis (tudo que não está com pagamento pendente).
+     *
+     * @param  Builder<Inscricao>  $query
+     * @return Builder<Inscricao>
+     */
+    public function scopeComPagamentoPagoOuNaoAplicavel(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q): void {
+            $q->semPagamentoAplicavel()
+                ->orWhere(fn (Builder $sub): Builder => $sub->comPagamentoConcluido());
+        });
+    }
+
     public function temPagamentoPendente(): bool
     {
         if (! is_array($this->pagamentos_disciplinas)) {
@@ -601,6 +722,94 @@ class Inscricao extends Model
         $digits = preg_replace('/\D/', '', (string) $cpf);
 
         return strlen($digits) === 11 ? $digits : null;
+    }
+
+    public function emailNormalizado(): ?string
+    {
+        if (! filled($this->email)) {
+            return null;
+        }
+
+        return strtolower(trim((string) $this->email));
+    }
+
+    public function ehDuplicataPorEmail(): bool
+    {
+        if (array_key_exists('eh_duplicata', $this->attributes)) {
+            return (bool) $this->attributes['eh_duplicata'];
+        }
+
+        $email = $this->emailNormalizado();
+        if ($email === null) {
+            return false;
+        }
+
+        $idMaisRecente = static::query()
+            ->whereRaw('LOWER(TRIM(email)) = ?', [$email])
+            ->max('id');
+
+        if ($idMaisRecente === null) {
+            return false;
+        }
+
+        $total = static::query()
+            ->whereRaw('LOWER(TRIM(email)) = ?', [$email])
+            ->count();
+
+        return $total > 1 && (int) $idMaisRecente !== (int) $this->id;
+    }
+
+    /**
+     * Marca inscrições mais antigas com o mesmo e-mail como duplicata (a mais recente por id não é duplicata).
+     *
+     * @param  iterable<int, self>  $inscricoes
+     */
+    public static function atribuirFlagDuplicataPorEmail(iterable $inscricoes): void
+    {
+        if ($inscricoes instanceof Paginator) {
+            $colecao = $inscricoes->getCollection();
+        } elseif ($inscricoes instanceof Collection) {
+            $colecao = $inscricoes;
+        } else {
+            $colecao = collect($inscricoes);
+        }
+
+        $colecao = $colecao
+            ->filter(fn (mixed $item): bool => $item instanceof self)
+            ->values();
+
+        $emails = $colecao
+            ->map(fn (self $inscricao): ?string => $inscricao->emailNormalizado())
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($emails->isEmpty()) {
+            foreach ($colecao as $inscricao) {
+                $inscricao->setAttribute('eh_duplicata', false);
+            }
+
+            return;
+        }
+
+        $idMaisRecentePorEmail = static::query()
+            ->selectRaw('LOWER(TRIM(email)) as email_norm, MAX(id) as latest_id')
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->whereIn(DB::raw('LOWER(TRIM(email))'), $emails->all())
+            ->groupByRaw('LOWER(TRIM(email))')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('latest_id', 'email_norm');
+
+        foreach ($colecao as $inscricao) {
+            $email = $inscricao->emailNormalizado();
+            $inscricao->setAttribute(
+                'eh_duplicata',
+                $email !== null
+                    && $idMaisRecentePorEmail->has($email)
+                    && (int) $idMaisRecentePorEmail->get($email) !== (int) $inscricao->id
+            );
+        }
     }
 
     public function precisaGerarNovoPix(int $quantidadeAtual, float $valorAtual): bool

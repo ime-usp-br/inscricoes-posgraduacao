@@ -20,7 +20,9 @@
             {{-- Inclui o cabeçalho USP --}}
             <x-usp.header />
 
-            <livewire:layout.navigation />
+            @unless (request()->routeIs('home', 'inscricao.*') && ! auth()->check())
+                <livewire:layout.navigation />
+            @endunless
 
             @if (isset($header))
                 <header class="bg-white dark:bg-gray-800 shadow">

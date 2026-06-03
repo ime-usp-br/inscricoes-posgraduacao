@@ -142,7 +142,7 @@ RUN apt-get update && apt-get upgrade -y \
         php8.2-sybase \
         php8.2-opcache \
     # Install SQL Server PDO extension
-    && pecl install pdo_sqlsrv \
+    && pecl install pdo_sqlsrv-5.12.0 \
     && echo "extension=pdo_sqlsrv.so" > /etc/php/8.2/fpm/conf.d/20-pdo_sqlsrv.ini \
     && echo "extension=pdo_sqlsrv.so" > /etc/php/8.2/cli/conf.d/20-pdo_sqlsrv.ini \
     # Install database clients

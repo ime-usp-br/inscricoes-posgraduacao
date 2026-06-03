@@ -36,23 +36,11 @@ class EventServiceProvider extends ServiceProvider
     }
 
     /**
-     * Determina se eventos e listeners devem ser descobertos automaticamente.
-     * Retornamos true para permitir o auto-discovery dos outros listeners.
+     * A descoberta de listeners em app/Listeners já é feita pelo Laravel.
+     * Evita registrar os mesmos ouvintes duas vezes.
      */
     public function shouldDiscoverEvents(): bool
     {
-        return true;
-    }
-
-    /**
-     * Obtém os diretórios que devem ser usados para descobrir eventos.
-     *
-     * @return array<int, string>
-     */
-    protected function discoverEventsWithin(): array
-    {
-        return [
-            $this->app->path('Listeners'),
-        ];
+        return false;
     }
 }

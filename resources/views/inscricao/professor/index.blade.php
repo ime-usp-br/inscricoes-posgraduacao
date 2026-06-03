@@ -74,9 +74,12 @@
                                 @forelse ($inscricoes as $i)
                                     <tr class="bg-white dark:bg-gray-900 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/60">
                                         <td class="px-4 py-4 rounded-l-lg">
-                                            <a href="{{ route('professor.inscricoes.show', $i) }}" class="font-medium text-blue-700 dark:text-blue-400 hover:underline">
-                                                {{ $i->nome_completo }}
-                                            </a>
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <a href="{{ route('professor.inscricoes.show', $i) }}" class="font-medium text-blue-700 dark:text-blue-400 hover:underline">
+                                                    {{ $i->nome_completo }}
+                                                </a>
+                                                <x-inscricao-duplicata-badge :inscricao="$i" />
+                                            </div>
                                         </td>
                                         @if ($mostrarColunaSecretaria)
                                             <td class="px-4 py-4">

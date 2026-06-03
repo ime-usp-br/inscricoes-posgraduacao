@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\WspixClient;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class WspixHttpClient implements WspixClient
@@ -36,6 +37,13 @@ class WspixHttpClient implements WspixClient
         }
 
         $url = rtrim((string) config('wspix.base_url'), '/').$path;
+        $logContext = [
+            'method' => $method,
+            'path' => $path,
+            'url' => $url,
+            'query' => $query,
+            'body' => $this->sanitizeBodyForLogs($body),
+        ];
 
         try {
             $pending = Http::withHeaders([
@@ -50,6 +58,10 @@ class WspixHttpClient implements WspixClient
                 default => throw new RuntimeException('Método HTTP não suportado.'),
             };
         } catch (RequestException $exception) {
+            Log::error('Falha de comunicação com WSPIX.', array_merge($logContext, [
+                'error' => $exception->getMessage(),
+            ]));
+
             throw new RuntimeException(
                 'Falha na comunicação com o WSPIX: '.$exception->getMessage(),
                 0,
@@ -58,6 +70,11 @@ class WspixHttpClient implements WspixClient
         }
 
         if (! $response->successful()) {
+            Log::warning('WSPIX retornou resposta de erro.', array_merge($logContext, [
+                'status' => $response->status(),
+                'response_body' => $response->body(),
+            ]));
+
             throw new RuntimeException(
                 'WSPIX retornou erro HTTP '.$response->status().': '.$response->body()
             );
@@ -69,5 +86,20 @@ class WspixHttpClient implements WspixClient
         }
 
         return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $body
+     * @return array<string, mixed>
+     */
+    private function sanitizeBodyForLogs(array $body): array
+    {
+        $sanitized = $body;
+
+        if (isset($sanitized['docPesOrg']) && is_string($sanitized['docPesOrg'])) {
+            $sanitized['docPesOrg'] = substr($sanitized['docPesOrg'], 0, 3).'***';
+        }
+
+        return $sanitized;
     }
 }

@@ -307,4 +307,112 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
             ->assertSee("Aprovar {$codigo}", false)
             ->assertSee("Reprovar {$codigo}", false);
     }
+
+    #[Test]
+    public function secretario_can_bulk_approve_multiple_inscricoes(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $primeira = Inscricao::factory()->concluida()->comTresDisciplinas()->create();
+        $segunda = Inscricao::factory()->concluida()->comTresDisciplinas()->create();
+
+        $this->actingAs($secretario)
+            ->post(route('inscricoes.aprovar-bloco-secretaria'), [
+                'inscricoes' => [$primeira->id, $segunda->id],
+            ])
+            ->assertRedirect(route('inscricoes.index'))
+            ->assertSessionHas('success');
+
+        $primeira->refresh();
+        $segunda->refresh();
+
+        $this->assertSame(AprovacaoSecretariaDisciplina::Aprovado, $primeira->aprovacao_obrigatoria_secretaria);
+        $this->assertSame(AprovacaoSecretariaDisciplina::Aprovado, $primeira->aprovacao_opcional_1_secretaria);
+        $this->assertSame(AprovacaoSecretariaDisciplina::Aprovado, $primeira->aprovacao_opcional_2_secretaria);
+        $this->assertSame(InscricaoStatus::AprovadoSecretaria, $primeira->status);
+
+        $this->assertSame(AprovacaoSecretariaDisciplina::Aprovado, $segunda->aprovacao_obrigatoria_secretaria);
+        $this->assertSame(InscricaoStatus::AprovadoSecretaria, $segunda->status);
+    }
+
+    #[Test]
+    public function bulk_approve_skips_already_fully_approved_inscricoes(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $aprovada = Inscricao::factory()->concluida()->comTresDisciplinas()->create([
+            'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+            'aprovacao_opcional_1_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+            'aprovacao_opcional_2_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+            'status' => InscricaoStatus::AprovadoSecretaria,
+        ]);
+
+        $pendente = Inscricao::factory()->concluida()->comTresDisciplinas()->create();
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.aprovar-bloco-secretaria'), [
+                'inscricoes' => [$aprovada->id, $pendente->id],
+            ])
+            ->assertRedirect(route('inscricoes.index'))
+            ->assertSessionHas('success');
+
+        $pendente->refresh();
+        $this->assertSame(AprovacaoSecretariaDisciplina::Aprovado, $pendente->aprovacao_obrigatoria_secretaria);
+    }
+
+    #[Test]
+    public function bulk_approve_requires_at_least_one_inscricao(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.aprovar-bloco-secretaria'), [])
+            ->assertSessionHasErrors('inscricoes');
+    }
+
+    #[Test]
+    public function inscricoes_index_shows_bulk_approve_controls(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        Inscricao::factory()->concluida()->comTresDisciplinas()->create();
+
+        $this->actingAs($secretario)
+            ->get(route('inscricoes.index'))
+            ->assertOk()
+            ->assertSee('Aprovar selecionadas', false);
+    }
+
+    #[Test]
+    public function inscricoes_mais_antigas_com_mesmo_email_recebem_tag_duplicata(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $email = 'candidato.duplicado@example.com';
+
+        $antiga = Inscricao::factory()->concluida()->create([
+            'nome_completo' => 'Inscrição Antiga',
+            'email' => $email,
+        ]);
+
+        $recente = Inscricao::factory()->concluida()->create([
+            'nome_completo' => 'Inscrição Recente',
+            'email' => strtoupper($email),
+        ]);
+
+        $this->assertTrue($antiga->ehDuplicataPorEmail());
+        $this->assertFalse($recente->ehDuplicataPorEmail());
+
+        $this->actingAs($admin)
+            ->get(route('inscricoes.index'))
+            ->assertOk()
+            ->assertSee('Duplicata')
+            ->assertSee($antiga->nome_completo)
+            ->assertSee($recente->nome_completo);
+    }
 }

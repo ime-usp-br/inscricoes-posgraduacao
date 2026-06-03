@@ -6,9 +6,11 @@ use App\Enums\PagamentoDisciplinaStatus;
 use App\Models\DisciplinaOfertada;
 use App\Models\Inscricao;
 use App\Models\Periodo;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class InscricaoPagamentoTest extends TestCase
@@ -18,6 +20,8 @@ class InscricaoPagamentoTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Role::firstOrCreate(['name' => 'Secretario', 'guard_name' => 'web']);
 
         $this->fakeWspixApi();
     }
@@ -245,6 +249,120 @@ class InscricaoPagamentoTest extends TestCase
         $this->withSession(['inscricao_id' => $inscricao->id])
             ->get(route('home'))
             ->assertRedirect(route('inscricao.pagamento'));
+    }
+
+    #[Test]
+    public function gerar_pix_sanitiza_campos_textuais_para_charset_compativel_do_wspix(): void
+    {
+        $periodo = Periodo::factory()->create();
+        $mac = DisciplinaOfertada::factory()->create([
+            'periodo_id' => $periodo->id,
+            'departamento' => 'MAC',
+        ]);
+
+        $inscricao = $this->inscricaoNaoUspNaoFormado($periodo->id);
+        $inscricao->update([
+            'nome_completo' => 'João da Silva — Pós',
+            'disciplina_obrigatoria_id' => $mac->id,
+            'justificativa_disciplina_obrigatoria' => 'Justificativa.',
+            'etapa_concluida' => 3,
+            'concluido_em' => now(),
+            'pagamentos_disciplinas' => ['obrigatoria' => PagamentoDisciplinaStatus::Pendente->value],
+            'pix_idfpix' => null,
+            'pix_valor' => null,
+            'pix_quantidade_disciplinas' => null,
+        ]);
+
+        Http::fake([
+            '*' => Http::response([
+                'idfpix' => 'PIX-TEST-001',
+                'status' => 'Ativo',
+                'qrCode' => '000201',
+                'qrCodeImgBase64' => base64_encode('qr'),
+            ]),
+        ]);
+
+        $this->withSession(['inscricao_id' => $inscricao->id])
+            ->get(route('inscricao.pagamento'))
+            ->assertOk();
+
+        Http::assertSent(function ($request): bool {
+            if (! str_contains($request->url(), '/pix/gerar')) {
+                return true;
+            }
+
+            $data = $request->data();
+            $nome = (string) ($data['nomePesOrg'] ?? '');
+            $cobranca = (string) ($data['infoCobranca'] ?? '');
+
+            return ! preg_match('/[^\x20-\x7E]/', $nome)
+                && ! preg_match('/[^\x20-\x7E]/', $cobranca);
+        });
+    }
+
+    #[Test]
+    public function inscricoes_index_exibe_coluna_e_filtra_por_status_de_pagamento(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $periodo = Periodo::factory()->create();
+        $mac = DisciplinaOfertada::factory()->create([
+            'periodo_id' => $periodo->id,
+            'departamento' => 'MAC',
+        ]);
+
+        $pendente = $this->inscricaoNaoUspNaoFormado($periodo->id);
+        $pendente->update([
+            'nome_completo' => 'Candidato Pagamento Pendente',
+            'disciplina_obrigatoria_id' => $mac->id,
+            'justificativa_disciplina_obrigatoria' => 'Justificativa.',
+            'etapa_concluida' => 3,
+            'concluido_em' => now(),
+            'pagamentos_disciplinas' => ['obrigatoria' => PagamentoDisciplinaStatus::Pendente->value],
+            'pix_idfpix' => 'PIX-LISTA-1',
+        ]);
+
+        $pago = $this->inscricaoNaoUspNaoFormado($periodo->id);
+        $pago->update([
+            'nome_completo' => 'Candidato Pagamento Pago',
+            'disciplina_obrigatoria_id' => $mac->id,
+            'justificativa_disciplina_obrigatoria' => 'Justificativa.',
+            'etapa_concluida' => 3,
+            'concluido_em' => now(),
+            'pagamentos_disciplinas' => ['obrigatoria' => PagamentoDisciplinaStatus::Pago->value],
+            'pix_pago_em' => now(),
+        ]);
+
+        $isento = Inscricao::factory()->concluida()->create([
+            'periodo_id' => $periodo->id,
+            'nome_completo' => 'Candidato Sem Pagamento',
+            'aluno_usp' => true,
+            'pagamentos_disciplinas' => null,
+        ]);
+
+        $this->actingAs($secretario)
+            ->get(route('inscricoes.index'))
+            ->assertOk()
+            ->assertSee('Pagamento')
+            ->assertSee('Não pago')
+            ->assertSee('Pago')
+            ->assertSee('Não aplicável')
+            ->assertDontSee('Pix gerado');
+
+        $this->actingAs($secretario)
+            ->get(route('inscricoes.index', ['pagamento' => 'nao_pago']))
+            ->assertOk()
+            ->assertSee($pendente->nome_completo)
+            ->assertDontSee($pago->nome_completo)
+            ->assertDontSee($isento->nome_completo);
+
+        $this->actingAs($secretario)
+            ->get(route('inscricoes.index', ['pagamento' => 'demais']))
+            ->assertOk()
+            ->assertSee($pago->nome_completo)
+            ->assertSee($isento->nome_completo)
+            ->assertDontSee($pendente->nome_completo);
     }
 
     private function inscricaoNaoUspNaoFormado(int $periodoId): Inscricao

@@ -31,7 +31,7 @@ class FilamentAdminSeeder extends Seeder
             [
                 'name' => 'Administrador',
                 'email_verified_at' => now(),
-                'password' => bcrypt('password'), // Change this in production!
+                'password' => bcrypt('AsaDelta73!'), // Change this in production!
             ]
         );
 
@@ -42,38 +42,5 @@ class FilamentAdminSeeder extends Seeder
 
         $this->command->info('Admin user created: admin@usp.br / password');
 
-        $secretarioRole = Role::firstOrCreate(['name' => 'Secretario', 'guard_name' => 'web']);
-        $secretario = User::firstOrCreate(
-            ['email' => 'secretario@usp.br'],
-            [
-                'name' => 'Secretario',
-                'email_verified_at' => now(),
-                'password' => bcrypt('password'), // Change this in production!
-            ]
-        );
-
-        // Assign Secretario role
-        if (! $secretario->hasRole('Secretario')) {
-            $secretario->assignRole($secretarioRole);
-        }
-
-        $this->command->info('Secretario user created: secretario@usp.br / password');
-
-        $professorRole = Role::firstOrCreate(['name' => 'Professor', 'guard_name' => 'web']);
-        $professor = User::firstOrCreate(
-            ['email' => 'professor@usp.br'],
-            [
-                'name' => 'Professor',
-                'email_verified_at' => now(),
-                'password' => bcrypt('password'), // Change this in production!
-            ]
-        );
-
-        // Assign Professor role
-        if (! $professor->hasRole('Professor')) {
-            $professor->assignRole($professorRole);
-        }
-
-        $this->command->info('Professor user created: professor@usp.br / password');
     }
 }

@@ -1,11 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                Inscrição — {{ $inscricao->nome_completo }}
-            </h2>
+            <div class="flex flex-wrap items-center gap-3">
+                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                    Inscrição — {{ $inscricao->nome_completo }}
+                </h2>
+                <x-inscricao-duplicata-badge :inscricao="$inscricao" />
+            </div>
             <x-back-link
-                :href="route('inscricoes.index', request()->only(['q', 'periodo_id', 'disciplina_id']))"
+                :href="route('inscricoes.index', request()->only(['q', 'periodo_id', 'disciplina_id', 'aprovacao', 'pagamento', 'page']))"
                 label="Voltar à lista"
             />
         </div>

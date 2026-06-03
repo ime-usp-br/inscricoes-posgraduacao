@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\AprovacaoSecretariaDisciplina;
 use App\Enums\ResumoAprovacaoInscricao;
 use App\Http\Requests\AprovarDisciplinaSecretariaRequest;
+use App\Http\Requests\AprovarInscricoesEmBlocoSecretariaRequest;
 use App\Models\DisciplinaOfertada;
 use App\Models\Inscricao;
 use App\Models\Periodo;
@@ -23,6 +24,11 @@ class InscricaoAdminController extends Controller
         $periodoId = $request->integer('periodo_id');
         $disciplinaId = $request->integer('disciplina_id');
         $filtroAprovacao = $request->string('aprovacao')->toString();
+        $filtroPagamento = match ($request->string('pagamento')->toString()) {
+            'pendente' => 'nao_pago',
+            'pago', 'nao_aplicavel' => 'demais',
+            default => $request->string('pagamento')->toString(),
+        };
 
         $query = Inscricao::query()
             ->with(['periodo', 'disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2'])
@@ -56,7 +62,14 @@ class InscricaoAdminController extends Controller
             default => null,
         };
 
+        match ($filtroPagamento) {
+            'nao_pago' => $query->comPagamentoPendente(),
+            'demais' => $query->comPagamentoPagoOuNaoAplicavel(),
+            default => null,
+        };
+
         $inscricoes = $query->paginate(20)->withQueryString();
+        Inscricao::atribuirFlagDuplicataPorEmail($inscricoes);
 
         $periodos = Periodo::query()
             ->orderByDesc('ano')
@@ -78,6 +91,7 @@ class InscricaoAdminController extends Controller
             'periodoId',
             'disciplinaId',
             'filtroAprovacao',
+            'filtroPagamento',
         ));
     }
 
@@ -89,6 +103,7 @@ class InscricaoAdminController extends Controller
             'disciplinaOpcional1',
             'disciplinaOpcional2',
         ]);
+        Inscricao::atribuirFlagDuplicataPorEmail([$inscricao]);
 
         return view('inscricao.admin.show', compact('inscricao'));
     }
@@ -116,6 +131,63 @@ class InscricaoAdminController extends Controller
         }
 
         return Storage::disk('local')->download($path);
+    }
+
+    public function aprovarEmBlocoSecretaria(AprovarInscricoesEmBlocoSecretariaRequest $request): RedirectResponse
+    {
+        $ids = $request->validated('inscricoes');
+
+        $inscricoes = Inscricao::query()
+            ->whereIn('id', $ids)
+            ->where('etapa_concluida', '>=', 3)
+            ->get();
+
+        $inscricoesAtualizadas = 0;
+        $disciplinasAprovadas = 0;
+        $semAlteracao = 0;
+
+        foreach ($inscricoes as $inscricao) {
+            $aprovadas = $inscricao->aprovarTodasDisciplinasPelaSecretaria();
+
+            if ($aprovadas > 0) {
+                $inscricoesAtualizadas++;
+                $disciplinasAprovadas += $aprovadas;
+            } else {
+                $semAlteracao++;
+            }
+        }
+
+        $redirect = redirect()->route('inscricoes.index', $request->only([
+            'q',
+            'periodo_id',
+            'disciplina_id',
+            'aprovacao',
+            'pagamento',
+            'page',
+        ]));
+
+        if ($inscricoesAtualizadas === 0) {
+            return $redirect->withErrors([
+                'aprovacao' => 'Nenhuma disciplina pendente foi aprovada nas inscrições selecionadas.',
+            ]);
+        }
+
+        $mensagem = $inscricoesAtualizadas === 1
+            ? '1 inscrição aprovada pela secretaria'
+            : "{$inscricoesAtualizadas} inscrições aprovadas pela secretaria";
+
+        $mensagem .= " ({$disciplinasAprovadas} disciplina(s) no total).";
+
+        if ($semAlteracao > 0) {
+            $mensagem .= " {$semAlteracao} inscrição(ões) selecionada(s) já estavam totalmente aprovadas.";
+        }
+
+        $idsNaoEncontrados = count($ids) - $inscricoes->count();
+        if ($idsNaoEncontrados > 0) {
+            $mensagem .= " {$idsNaoEncontrados} seleção(ões) ignorada(s) (inscrição inexistente ou não concluída).";
+        }
+
+        return $redirect->with('success', $mensagem);
     }
 
     public function aprovarDisciplinaSecretaria(

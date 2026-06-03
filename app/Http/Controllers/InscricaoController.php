@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
 
 class InscricaoController extends Controller
 {
-    public function home(): View
+    public function home(): View|RedirectResponse
     {
         $periodoAtivo = Periodo::ativoParaInscricoes();
 

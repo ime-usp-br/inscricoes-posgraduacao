@@ -10,6 +10,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 use OwenIt\Auditing\Contracts\Auditable;
 use Spatie\Permission\Traits\HasRoles;
 use Uspdev\SenhaunicaSocialite\Traits\HasSenhaunica;
@@ -98,6 +99,27 @@ class User extends Authenticatable implements Auditable, CanResetPassword, Filam
     public function canDeleteSecretariaResources(): bool
     {
         return $this->isAdmin();
+    }
+
+    /**
+     * Sincroniza permissões da Senha Única sem derrubar o login se o Replicado falhar.
+     *
+     * @param  object  $userSenhaUnica
+     */
+    public function aplicarPermissoes($userSenhaUnica): void
+    {
+        if (! config('senhaunica.permission', false)) {
+            return;
+        }
+
+        try {
+            parent::aplicarPermissoes($userSenhaUnica);
+        } catch (\Throwable $exception) {
+            Log::warning('Permissões da Senha Única não sincronizadas (Replicado indisponível ou sem acesso).', [
+                'codpes' => $this->codpes,
+                'message' => $exception->getMessage(),
+            ]);
+        }
     }
 
     /**

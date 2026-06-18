@@ -23,9 +23,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             FilamentAdminSeeder::class,
-            PeriodoSeeder::class,
-            DisciplinaOfertadaSeeder::class,
-            InscricaoSeeder::class,
+            // PeriodoSeeder::class,
+            // DisciplinaOfertadaSeeder::class,
+            // InscricaoSeeder::class,
         ]);
     }
 }

@@ -1,83 +1,29 @@
-# Laravel 12 USP Starter Kit
+# Sistema de Inscrições em Pós-Graduação — IME-USP
 
-**Versão:** 0.1.3<br>
-**Data:** 2025-10-17
+**Versão:** 0.2.0  
+**Instituto de Matemática e Estatística — USP**
 
-[![Status da Build](https://github.com/ime-usp-br/laravel_12_starter_kit/actions/workflows/laravel.yml/badge.svg)](https://github.com/ime-usp-br/laravel_12_starter_kit/actions/workflows/laravel.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 1. Introdução
 
-O **Laravel 12 USP Starter Kit** é um ponto de partida acelerado para o desenvolvimento de aplicações web com Laravel 12, especificamente adaptado para as necessidades e o ecossistema da Universidade de São Paulo (USP).
+Sistema web do IME-USP para **inscrição em disciplinas de pós-graduação**: candidatos preenchem o formulário público, pagam via Pix e acompanham o fluxo; secretaria e professores analisam e aprovam inscrições. Integra **Senha Única**, **Replicado** e **WSPIX**.
 
-**Propósito e Justificativa:** Este kit foi criado para padronizar e agilizar o desenvolvimento de aplicações Laravel na USP, eliminando a necessidade Recorrente de configurar manualmente integrações comuns como autenticação (Senha Única USP e local), gerenciamento de permissões e acesso aos dados corporativos (Replicado). O objetivo é fornecer uma base de código robusta, pré-configurada e alinhada com boas práticas, reduzindo o tempo inicial de setup e promovendo a consistência entre os sistemas desenvolvidos na universidade.
+## 2. Público-alvo
 
-## 2. Público-Alvo
+*   **Candidatos** (alunos USP e externos) — inscrição em períodos abertos.
+*   **Secretaria** — períodos, disciplinas e aprovação de inscrições.
+*   **Professores** — avaliação das inscrições de suas disciplinas.
+*   **Equipe de TI** — instalação, manutenção e administração (`Admin`).
 
-Este Starter Kit destina-se principalmente a:
+## 3. Principais funcionalidades
 
-*   Desenvolvedores da USP (Júnior, Estagiários, Plenos, Sêniores).
-*   Equipes responsáveis pelo desenvolvimento e manutenção de sistemas departamentais ou centrais da USP.
-
-Assume-se um conhecimento básico de PHP, Laravel, Git e linha de comando.
-
-## 3. Principais Funcionalidades
-
-Este Starter Kit vem pré-configurado com:
-
-*   **Base Laravel 12:** Estrutura inicial pronta para uso.
-*   **Autenticação Dupla:**
-    *   **Senha Única USP:** Integração completa e funcional via `uspdev/senhaunica-socialite` (a ser totalmente implementada no backend e UI).
-    *   **Autenticação Local (Scaffolding via Breeze):** Sistema de Login/Registro/Reset de Senha/Verificação de Email baseado no **Laravel Breeze (Stack Livewire Class API)**, pronto para customização visual e integração com a lógica de validação USP.
-    *   **Registro Unificado (Planejado):** Formulário de registro único que diferenciará usuários USP (com validação de Nº USP e e-mail via Replicado) e externos, utilizando a base do Breeze.
-*   **Integração com Replicado:**
-    *   Biblioteca `uspdev/replicado` configurada.
-    *   `ReplicadoService` (Planejado): Uma classe de serviço com métodos comuns para consulta de dados pessoais e vínculos, usada na validação do registro.
-*   **Gerenciamento de Permissões:**
-    *   Integração com `spatie/laravel-permission`.
-    *   Roles padrão pré-definidos (Planejado: `Admin`, `User`, `usp_user`, `external_user`).
-    *   Atribuição automática de roles no registro (Planejado).
-    *   Interface básica TALL Stack para gerenciamento de Usuários, Roles e Permissões (Planejado).
-    *   Aplicação de permissões hierárquicas e de vínculo vindas da Senha Única (guard `senhaunica`).
-*   **Sistema de Filas e Jobs Assíncronos:**
-    *   Configuração robusta de filas com driver `database`.
-    *   Workers de fila configurados via Supervisor para ambientes de produção.
-    *   Documentação completa em `README_QUEUES.md` sobre configuração e uso de filas.
-    *   Testes automatizados para jobs em fila.
-*   **Sistema de Logging de Email:**
-    *   Model `EmailLog` para rastreamento de todos os emails enviados.
-    *   Logging automático de eventos de email.
-    *   Integração com Filament Admin para visualização de logs.
-    *   Cache lock para prevenir notificações duplicadas de verificação de email.
-*   **Painel Administrativo Filament:**
-    *   Filament 4.x instalado e configurado.
-    *   Resource `EmailLogResource` para visualização de logs de email.
-    *   Dashboard básico acessível via `/admin`.
-*   **Infraestrutura Docker para Produção:**
-    *   Dockerfile otimizado para produção com multi-stage build.
-    *   Configuração Docker Compose para produção.
-    *   Scripts de deployment automatizados (`deploy.sh`, `setup-prod.sh`).
-    *   Configuração de workers de fila no container Docker.
-*   **Stack Frontend TALL (via Breeze):**
-    *   **Livewire 3 (Class API):** Para componentes PHP interativos.
-    *   **Alpine.js 3:** Para interatividade leve no frontend.
-    *   **Tailwind CSS 4:** Para estilização moderna e utilitária.
-    *   **Vite:** Para compilação de assets.
-    *   **Suporte a Dark Mode:** Pré-configurado pelo Breeze.
-    *   Componentes Blade básicos e reutilizáveis, adaptados visualmente às diretrizes da USP (Planejado).
-*   **Ferramentas de Qualidade:**
-    *   **Laravel Pint:** Para formatação automática de código (PSR-12).
-    *   **Larastan (PHPStan):** Para análise estática de código.
-    *   **EditorConfig:** Para manter a consistência de estilo entre editores.
-*   **Testes Automatizados:**
-    *   Estrutura inicial com testes unitários e de feature (**PHPUnit** como framework padrão, configurado pelo Breeze).
-    *   Testes básicos de autenticação adicionados pelo Breeze.
-    *   **Laravel Dusk:** Para testes de browser End-to-End.
-    *   Facilitadores (`Fakes`) para testar integrações com Senha Única e Replicado sem depender dos serviços reais (Planejado).
-*   **Documentação:** README detalhado e [Wiki do Projeto](https://github.com/ime-usp-br/laravel_12_starter_kit/wiki) para guias aprofundados.
-*   **Configurações Adicionais:** Filas com driver `database`, exemplo de `supervisor.conf`, LogViewer básico (Planejado).
-
-*Para uma lista completa de funcionalidades incluídas e excluídas, consulte o [Termo de Abertura do Projeto](./docs/termo_abertura_projeto.md).*
+*   **Inscrição pública** — formulário em etapas, upload de documentos e pagamento Pix unificado.
+*   **Secretaria** — cadastro de períodos e disciplinas (com importação do Replicado), listagem, filtros e aprovação (individual ou em bloco).
+*   **Professor** — listagem e aprovação/reprovação de inscrições elegíveis.
+*   **Autenticação** — Senha Única USP e login local; papéis `Admin`, `Secretario` e `Professor` (docentes na tabela `DOCENTE` do Replicado recebem `Professor` no login).
+*   **Integrações USP** — Replicado (disciplinas, validação NUSP/e-mail, docentes) e WSPIX (Pix e webhook de confirmação).
+*   **Administração** — painel Filament (`/admin`) para usuários e logs de e-mail.
 
 ## 4. Stack Tecnológica
 
@@ -99,219 +45,106 @@ Este Starter Kit vem pré-configurado com:
 
 ## 5. Instalação
 
-Este Starter Kit já vem com o Laravel Breeze (Stack TALL - Livewire Class API, Alpine.js, Tailwind CSS com Dark Mode) e Laravel Dusk pré-instalados e configurados. Você pode escolher entre instalação tradicional ou usando Docker com Laravel Sail.
+Desenvolvimento local com **Docker (Sail)** ou **sem Docker**. Em produção, use `docker-compose.prod.yml`.
 
-### 5.1. Instalação com Laravel Sail (Recomendado)
+### 5.1. Com Docker (Sail) — recomendado
 
-Laravel Sail fornece um ambiente Docker completo com PHP, MySQL, Redis, Selenium e outras dependências pré-configuradas.
+**Pré-requisitos:** Docker, Docker Compose, Git e Composer (no host, na primeira vez).
 
-1.  **Pré-requisitos:**
-    *   Docker e Docker Compose instalados
-    *   Git
-
-2.  **Clonar o Repositório:**
-    ```bash
-    git clone https://github.com/ime-usp-br/laravel_12_starter_kit.git seu-novo-projeto
-    cd seu-novo-projeto
-    ```
-
-3.  **Configurar Ambiente:**
-    *   Copie o arquivo de exemplo `.env`:
-        ```bash
-        cp .env.example .env
-        ```
-    *   **Edite o arquivo `.env`** e configure as variáveis essenciais para Sail:
-        ```bash
-        APP_NAME=Laravel
-        APP_URL=http://localhost
-        APP_PORT=8000
-
-        # Configuração do banco de dados para Sail
-        DB_CONNECTION=mysql
-        DB_HOST=mysql
-        DB_PORT=3306
-        DB_DATABASE=laravel12_usp_starter_kit
-        DB_USERNAME=sail
-        DB_PASSWORD=password
-
-        # Configuração de usuário Docker
-        WWWUSER=1000
-        WWWGROUP=1000
-        ```
-    *   **Credenciais USP:** Adicione e configure as variáveis para `uspdev/senhaunica-socialite` e `uspdev/replicado` (veja a seção 7).
-
-4.  **Iniciar Containers Docker:**
-    ```bash
-    ./vendor/bin/sail up -d
-    ```
-    *(Na primeira execução, as imagens Docker serão construídas, o que pode levar alguns minutos)*
-
-5.  **Gerar Chave da Aplicação:**
-    ```bash
-    ./vendor/bin/sail artisan key:generate
-    ```
-
-6.  **Instalar Dependências Frontend:**
-    ```bash
-    ./vendor/bin/sail npm install
-    ```
-
-7.  **Executar Migrações e Seeders:**
-    ```bash
-    ./vendor/bin/sail artisan migrate --seed
-    ```
-
-8.  **Compilar Assets Frontend:**
-    ```bash
-    ./vendor/bin/sail npm run dev
-    ```
-    *(Mantenha este comando rodando em um terminal separado durante o desenvolvimento)*
-
-9.  **Configurar Usuário Admin:**
-
-    Após a migração e seeding, você pode atribuir o perfil Admin a um usuário:
-    ```bash
-    ./vendor/bin/sail artisan tinker
-    ```
-    No tinker, execute:
-    ```php
-    $user = App\Models\User::where('email', 'seu-email@usp.br')->first();
-    $user->assignRole('Admin');
-    ```
-
-**Atalho:** Para simplificar comandos, você pode criar um alias:
 ```bash
-alias sail='./vendor/bin/sail'
+git clone <url-do-repositorio> inscricoes-posgraduacao
+cd inscricoes-posgraduacao
+composer install
+cp .env.example .env
 ```
 
-Agora você pode usar `sail up -d`, `sail artisan migrate`, `sail npm run dev`, etc.
+No `.env`, configure no mínimo:
 
-### 5.2. Instalação Tradicional (Sem Docker)
+```dotenv
+APP_URL=http://localhost:5004
+APP_PORT=5004
 
-1.  **Pré-requisitos:**
-    *   PHP >= 8.2 (com extensões comuns do Laravel: ctype, fileinfo, json, mbstring, openssl, PDO, tokenizer, xml, etc.)
-    *   Composer
-    *   Node.js (v18+) e NPM
-    *   Git
-    *   MySQL/MariaDB ou outro banco de dados compatível
-    *   **Google Chrome** ou **Chromium** instalado (para testes Dusk)
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
 
-2.  **Clonar o Repositório:**
-    ```bash
-    git clone https://github.com/ime-usp-br/laravel_12_starter_kit.git seu-novo-projeto
-    cd seu-novo-projeto
-    ```
+WWWUSER=1001
+WWWGROUP=1001
+```
 
-3.  **Instalar Dependências PHP:**
-    ```bash
-    composer install
-    ```
+Configure também Senha Única, Replicado e WSPIX (seção 7).
 
-4.  **Instalar Dependências Frontend:**
-    ```bash
-    npm install
-    ```
+```bash
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan key:generate
+./vendor/bin/sail npm install
+./vendor/bin/sail artisan migrate --seed
+./vendor/bin/sail npm run dev   # terminal separado
+```
 
-5.  **Configurar Ambiente:**
-    *   Copie o arquivo de exemplo `.env`:
-        ```bash
-        cp .env.example .env
-        ```
-    *   Gere a chave da aplicação:
-        ```bash
-        php artisan key:generate
-        ```
-    *   **Edite o arquivo `.env`:** Configure as variáveis de ambiente, especialmente:
-        *   `APP_NAME`: Nome da sua aplicação.
-        *   `APP_URL`: URL base da sua aplicação (ex: `http://localhost:8000`).
-        *   `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`: Credenciais do seu banco de dados.
-        *   `MAIL_*`: Configurações de e-mail (importante para verificação de e-mail).
-        *   **Credenciais USP:** Adicione e configure as variáveis para `uspdev/senhaunica-socialite` e `uspdev/replicado` (veja a seção 7).
+O `docker-compose.yml` sobe a aplicação, MySQL, worker de filas e Selenium. A imagem inclui `pdo_sqlsrv` para o Replicado (banco externo — o container precisa alcançá-lo na rede USP/VPN).
 
-6.  **Banco de Dados e Dados Iniciais:**
-    *   Execute as migrações para criar todas as tabelas necessárias:
-        ```bash
-        php artisan migrate
-        ```
-    *   (Opcional, mas recomendado) Execute os seeders para popular o banco com dados iniciais (ex: usuário de teste local `test@example.com`):
-        ```bash
-        php artisan db:seed
-        ```
+**Alias:** `alias sail='./vendor/bin/sail'`
 
-7.  **Compilar Assets Frontend:**
-    ```bash
-    npm run build
-    ```
-    *(Ou use `npm run dev` durante o desenvolvimento para compilação automática).*
+### 5.2. Sem Docker
 
-8.  **Configuração Inicial do Dusk (Importante):**
-    *   **Verificar Instalação:** Confirme se o Dusk está instalado (já deveria estar no `composer.json`). Se necessário, rode `php artisan dusk:install`.
-    *   **Instalar ChromeDriver:** Instale o driver correto para sua versão do Chrome/Chromium:
-        ```bash
-        php artisan dusk:chrome-driver --detect
-        ```
-    *   **Criar/Verificar `.env.dusk.local`:** Crie este arquivo na raiz do projeto (se não existir) e configure-o para o ambiente de teste do Dusk. Um exemplo (`.env.dusk.local`) já está incluído neste repositório. Preste atenção especial a:
-        *   `APP_URL=http://127.0.0.1:8000` (ou a URL que `php artisan serve` usa)
-        *   `DB_CONNECTION=sqlite` e `DB_DATABASE=database/testing/dusk.sqlite` (recomendado usar um banco de dados SQLite separado para testes Dusk)
+**Pré-requisitos:** PHP 8.2+ (`pdo_mysql`; para Replicado: `pdo_sqlsrv`), Composer, Node 18+, MySQL 8+.
 
-Seu ambiente de desenvolvimento com o Starter Kit deve estar pronto para uso.
+```bash
+git clone <url-do-repositorio> inscricoes-posgraduacao
+cd inscricoes-posgraduacao
+composer install && npm install
+cp .env.example .env
+php artisan key:generate
+```
 
-## 6. Uso Básico
+No `.env`, use MySQL local (`DB_HOST=127.0.0.1`) e as integrações USP (seção 7).
 
-### 6.1. Com Laravel Sail
+```bash
+php artisan migrate --seed
+php artisan serve          # terminal 1
+npm run dev                # terminal 2
+php artisan queue:work database --queue=high,default,low   # opcional
+```
 
-1.  **Iniciar Containers (se não estiverem rodando):**
-    ```bash
-    ./vendor/bin/sail up -d
-    ```
+### 5.3. Produção (Docker)
 
-2.  **Acessar a Aplicação:**
-    *   Abra seu navegador e acesse `http://localhost:8000` (ou a porta definida em `APP_PORT`).
-    *   Páginas de autenticação: `/login` (Senha Única), `/login/local`, `/register`.
-    *   Painel administrativo: `/admin` (requer autenticação e role Admin)
+```bash
+# .env com APP_ENV=production, APP_DEBUG=false, DB_HOST=mysql, credenciais USP
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml exec app php artisan migrate --force
+```
 
-3.  **Parar Containers:**
-    ```bash
-    ./vendor/bin/sail down
-    ```
+Porta padrão: `8016` (`APP_PORT`). Script auxiliar: `scripts/deploy.sh`.
 
-4.  **Comandos Úteis:**
-    ```bash
-    # Executar comandos Artisan
-    ./vendor/bin/sail artisan migrate
+## 6. Uso básico
 
-    # Executar npm
-    ./vendor/bin/sail npm run dev
+### 6.1. Rotas principais
 
-    # Acessar shell do container
-    ./vendor/bin/sail shell
+| Rota | Acesso |
+|------|--------|
+| `/` | Público — inscrição |
+| `/login` | Senha Única |
+| `/login/local` | E-mail e senha |
+| `/secretaria` | `Admin`, `Secretario` |
+| `/professor` | `Admin`, `Professor` |
+| `/admin` | `Admin` (Filament) |
 
-    # Ver logs
-    ./vendor/bin/sail logs
-    ```
+### 6.2. Comandos úteis (Sail)
 
-### 6.2. Instalação Tradicional
+```bash
+sail up -d / sail down
+sail artisan migrate
+sail npm run dev / sail npm run build
+sail artisan test
+sail shell / sail logs
+```
 
-1.  **Iniciar Servidores (Desenvolvimento):**
-    *   Para o servidor web PHP embutido:
-        ```bash
-        php artisan serve
-        ```
-    *   Para o servidor de desenvolvimento Vite (compilação de assets em tempo real):
-        ```bash
-        npm run dev
-        ```
+Sem Docker: substitua `sail` por `php artisan` / `npm` conforme o comando.
 
-2.  **Acessar a Aplicação:**
-    *   Abra seu navegador e acesse a `APP_URL` definida no `.env` (geralmente `http://localhost:8000`).
-    *   Páginas de autenticação: `/login` (Senha Única), `/login/local`, `/register`.
-    *   Painel administrativo: `/admin` (requer autenticação e role Admin)
-
-### 6.3. Credenciais Padrão
-
-*   Se você rodou `php artisan db:seed` (ou `migrate --seed`) após a instalação, pode usar o usuário local criado:
-    *   **Email:** `test@example.com`
-    *   **Senha:** `password`
 
 ## 7. Configurações Específicas da USP
 

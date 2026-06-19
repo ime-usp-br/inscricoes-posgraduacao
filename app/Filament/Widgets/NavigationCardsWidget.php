@@ -2,12 +2,15 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\SystemLogs;
 use App\Filament\Resources\AuditResource;
 use App\Filament\Resources\EmailLogResource;
 use App\Filament\Resources\Permissions\PermissionResource;
 use App\Filament\Resources\Roles\RoleResource;
 use App\Filament\Resources\Users\UserResource;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Number;
 
 class NavigationCardsWidget extends Widget
 {
@@ -16,7 +19,7 @@ class NavigationCardsWidget extends Widget
     protected int|string|array $columnSpan = 'full';
 
     /**
-     * @return array<int, array{title: string, description: string, icon: string, url: string, color: string, stats: int}>
+     * @return array<int, array{title: string, description: string, icon: string, url: string, color: string, stats: int|string}>
      */
     public function getNavigationCards(): array
     {
@@ -60,6 +63,16 @@ class NavigationCardsWidget extends Widget
                 'url' => EmailLogResource::getUrl('index'),
                 'color' => 'gray',
                 'stats' => \App\Models\EmailLog::count(),
+            ],
+            [
+                'title' => 'Logs do Sistema',
+                'description' => 'Visualizar arquivo de log da aplicação',
+                'icon' => 'heroicon-o-bug-ant',
+                'url' => SystemLogs::getUrl(),
+                'color' => 'gray',
+                'stats' => File::exists(storage_path('logs/laravel.log'))
+                    ? Number::fileSize(File::size(storage_path('logs/laravel.log')), precision: 1)
+                    : 'Ver Logs',
             ],
         ];
     }

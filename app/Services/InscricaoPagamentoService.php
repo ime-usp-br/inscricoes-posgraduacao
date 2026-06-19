@@ -3,10 +3,11 @@
 namespace App\Services;
 
 use App\Contracts\WspixClient;
-use App\Enums\PagamentoDisciplinaStatus;
 use App\Models\Inscricao;
+use App\Models\Periodo;
 use Illuminate\Support\Carbon;
 use RuntimeException;
+use Throwable;
 
 class InscricaoPagamentoService
 {
@@ -102,10 +103,7 @@ class InscricaoPagamentoService
 
         $inscricao->marcarTodasDisciplinasPagas();
 
-        $dataPag = $dados['dataPag'] ?? null;
-        $pagoEm = is_string($dataPag) && $dataPag !== ''
-            ? Carbon::parse($dataPag)
-            : now();
+        $pagoEm = $this->parseDataPagamentoWspix($dados['dataPag'] ?? null);
 
         $inscricao->pix_status = 'Concluído';
         $inscricao->pix_pago_em = $pagoEm;
@@ -217,5 +215,24 @@ class InscricaoPagamentoService
     {
         // WSPIX documenta "formato pt-BR" para valor decimal.
         return number_format($valor, 2, ',', '');
+    }
+
+    private function parseDataPagamentoWspix(mixed $dataPag): Carbon
+    {
+        if (! is_string($dataPag) || trim($dataPag) === '') {
+            return now();
+        }
+
+        $dataPag = trim($dataPag);
+
+        try {
+            return Carbon::createFromFormat('d/m/Y H:i:s', $dataPag, Periodo::BRASILIA_TIMEZONE);
+        } catch (Throwable) {
+            try {
+                return Carbon::parse($dataPag, Periodo::BRASILIA_TIMEZONE);
+            } catch (Throwable) {
+                return now();
+            }
+        }
     }
 }

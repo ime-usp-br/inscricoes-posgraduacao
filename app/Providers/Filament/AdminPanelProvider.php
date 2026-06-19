@@ -30,8 +30,11 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::hex('#1094AB'), // USP Blue Primary
                 'warning' => Color::hex('#FCB421'), // USP Yellow
+                'danger' => Color::hex('#DC2626'),
+                'gray' => Color::Gray,
             ])
             ->darkMode(true)
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->maxContentWidth(Width::SevenExtraLarge)
             ->renderHook(
                 PanelsRenderHook::BODY_START,

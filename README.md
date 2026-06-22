@@ -113,12 +113,14 @@ php artisan queue:work database --queue=high,default,low   # opcional
 ### 5.3. Produção (Docker)
 
 ```bash
+git clone <url-do-repositorio> inscricoes-posgraduacao
+cd inscricoes-posgraduacao
+cp .env.example .env
 # .env com APP_ENV=production, APP_DEBUG=false, DB_HOST=mysql, credenciais USP
 docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml exec app php artisan migrate --force
+docker compose -f docker-compose.prod.yml exec app php artisan migrate --seed --force
 ```
 
-Porta padrão: `8016` (`APP_PORT`). Script auxiliar: `scripts/deploy.sh`.
 
 ## 6. Uso básico
 

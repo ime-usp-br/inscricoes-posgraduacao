@@ -24,11 +24,11 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(), // Por padrão, pode vir verificado ou não
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            // 'name' => fake()->name(),
+            // 'email' => fake()->unique()->safeEmail(),
+            // 'email_verified_at' => now(), // Por padrão, pode vir verificado ou não
+            // 'password' => static::$password ??= Hash::make('password'),
+            // 'remember_token' => Str::random(10),
             // Adicione outros campos relevantes para seu modelo User aqui
             // 'codpes' => null, // se você tiver um campo codpes
             // 'is_usp_user' => false, // se você tiver um campo para indicar se é USP

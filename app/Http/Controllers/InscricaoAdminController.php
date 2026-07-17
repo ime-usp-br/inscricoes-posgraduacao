@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AprovacaoSecretariaDisciplina;
 use App\Enums\ResumoAprovacaoInscricao;
+use App\Http\Controllers\Concerns\DownloadsInscricaoPdf;
 use App\Http\Requests\AprovarDisciplinaSecretariaRequest;
 use App\Http\Requests\AprovarInscricoesEmBlocoSecretariaRequest;
 use App\Models\DisciplinaOfertada;
@@ -13,11 +14,12 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InscricaoAdminController extends Controller
 {
+    use DownloadsInscricaoPdf;
+
     public function index(Request $request): View
     {
         $search = trim($request->string('q')->toString());
@@ -110,27 +112,7 @@ class InscricaoAdminController extends Controller
 
     public function download(Inscricao $inscricao, string $campo): StreamedResponse
     {
-        if (! str_starts_with($campo, 'pdf_')) {
-            abort(404);
-        }
-
-        /** @var array<string, mixed>|null $dados */
-        $dados = $inscricao->dados_etapa_2;
-        if (! is_array($dados) || ! isset($dados[$campo]) || ! is_string($dados[$campo])) {
-            abort(404);
-        }
-
-        $path = $dados[$campo];
-        $prefix = 'inscricoes/'.$inscricao->id.'/';
-        if (! str_starts_with($path, $prefix)) {
-            abort(403);
-        }
-
-        if (! Storage::disk('local')->exists($path)) {
-            abort(404);
-        }
-
-        return Storage::disk('local')->download($path);
+        return $this->streamInscricaoPdf($inscricao, $campo);
     }
 
     public function aprovarEmBlocoSecretaria(AprovarInscricoesEmBlocoSecretariaRequest $request): RedirectResponse

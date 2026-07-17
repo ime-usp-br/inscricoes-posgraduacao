@@ -8,6 +8,7 @@ use App\Enums\InscricaoStatus;
 use App\Models\Inscricao;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -285,5 +286,79 @@ class InscricaoAprovacaoProfessorTest extends TestCase
             ->post(route('professor.inscricoes.aprovar', $inscricao), ['disciplina' => 'opcional_1'])
             ->assertRedirect(route('professor.inscricoes.show', $inscricao))
             ->assertSessionHasErrors('aprovacao');
+    }
+
+    #[Test]
+    public function professor_can_download_academic_document(): void
+    {
+        Storage::fake('local');
+
+        $professor = User::factory()->create();
+        $professor->assignRole('Professor');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create([
+                'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+            ]);
+
+        $historicoPath = 'inscricoes/'.$inscricao->id.'/historico_escolar.pdf';
+        $cpfPath = 'inscricoes/'.$inscricao->id.'/cpf.pdf';
+
+        $inscricao->update([
+            'dados_etapa_2' => [
+                'pdf_historico_escolar' => $historicoPath,
+                'pdf_cpf' => $cpfPath,
+            ],
+        ]);
+
+        Storage::disk('local')->put($historicoPath, 'conteudo-historico');
+        Storage::disk('local')->put($cpfPath, 'conteudo-cpf');
+
+        $this->actingAs($professor)
+            ->get(route('professor.inscricoes.download', [$inscricao, 'pdf_historico_escolar']))
+            ->assertOk();
+
+        $this->actingAs($professor)
+            ->get(route('professor.inscricoes.download', [$inscricao, 'pdf_cpf']))
+            ->assertForbidden();
+
+        $this->actingAs($professor)
+            ->get(route('inscricoes.download', [$inscricao, 'pdf_historico_escolar']))
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function professor_show_links_to_professor_download_route(): void
+    {
+        Storage::fake('local');
+
+        $professor = User::factory()->create();
+        $professor->assignRole('Professor');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create([
+                'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+            ]);
+
+        $historicoPath = 'inscricoes/'.$inscricao->id.'/historico_escolar.pdf';
+        $inscricao->update([
+            'dados_etapa_2' => [
+                'pdf_historico_escolar' => $historicoPath,
+                'pdf_cpf' => 'inscricoes/'.$inscricao->id.'/cpf.pdf',
+            ],
+        ]);
+
+        Storage::disk('local')->put($historicoPath, 'conteudo-historico');
+
+        $this->actingAs($professor)
+            ->get(route('professor.inscricoes.show', $inscricao))
+            ->assertOk()
+            ->assertSee(route('professor.inscricoes.download', [$inscricao, 'pdf_historico_escolar']), false)
+            ->assertDontSee(route('inscricoes.download', [$inscricao, 'pdf_historico_escolar']), false)
+            ->assertDontSee('CPF (PDF)');
     }
 }

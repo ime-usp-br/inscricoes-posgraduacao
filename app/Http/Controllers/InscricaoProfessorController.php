@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AprovacaoProfessorDisciplina;
 use App\Enums\AprovacaoSecretariaDisciplina;
+use App\Http\Controllers\Concerns\DownloadsInscricaoPdf;
 use App\Http\Requests\AprovarDisciplinaProfessorRequest;
 use App\Models\DisciplinaOfertada;
 use App\Models\Inscricao;
@@ -12,9 +13,12 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InscricaoProfessorController extends Controller
 {
+    use DownloadsInscricaoPdf;
+
     public function index(Request $request): View
     {
         $search = trim($request->string('q')->toString());
@@ -84,6 +88,19 @@ class InscricaoProfessorController extends Controller
         Inscricao::atribuirFlagDuplicataPorEmail([$inscricao]);
 
         return view('inscricao.professor.show', compact('inscricao'));
+    }
+
+    public function download(Inscricao $inscricao, string $campo): StreamedResponse
+    {
+        if (! $inscricao->disciplinasParaAprovacaoProfessor()) {
+            abort(404);
+        }
+
+        if (in_array($campo, $this->pdfsIdentidadeOcultosAoProfessor, true)) {
+            abort(403);
+        }
+
+        return $this->streamInscricaoPdf($inscricao, $campo);
     }
 
     public function aprovarDisciplinaProfessor(

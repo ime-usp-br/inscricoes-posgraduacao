@@ -61,6 +61,9 @@ Route::middleware(['auth', 'verified', 'role.any:Admin,Professor'])->group(funct
     Route::view('/professor', 'professor.index')->name('professor');
 
     Route::get('/professor/inscricoes', [InscricaoProfessorController::class, 'index'])->name('professor.inscricoes.index');
+    Route::get('/professor/inscricoes/{inscricao}/arquivo/{campo}', [InscricaoProfessorController::class, 'download'])
+        ->where('campo', '[a-zA-Z0-9_]+')
+        ->name('professor.inscricoes.download');
     Route::get('/professor/inscricoes/{inscricao}', [InscricaoProfessorController::class, 'show'])->name('professor.inscricoes.show');
     Route::post('/professor/inscricoes/{inscricao}/aprovar', [InscricaoProfessorController::class, 'aprovarDisciplinaProfessor'])
         ->name('professor.inscricoes.aprovar');

@@ -20,6 +20,7 @@
 
             @include('inscricao._dados-candidato', [
                 'inscricao' => $inscricao,
+                'downloadRoute' => 'professor.inscricoes.download',
                 'ocultarDocumentosIdentidade' => true,
             ])
 

@@ -17,6 +17,7 @@ use App\Policies\RolePolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use OwenIt\Auditing\Models\Audit;
@@ -36,6 +37,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Força HTTPS em produção (necessário quando há proxy/nginx na frente)
+        if (config('app.env') === 'production') {
+            URL::forceScheme('https');
+        }
+
         Paginator::defaultView('vendor.pagination.tailwind');
         Paginator::defaultSimpleView('vendor.pagination.simple-tailwind');
 

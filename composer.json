@@ -14,6 +14,7 @@
         "livewire/livewire": "^3.4",
         "livewire/volt": "^1.7.0",
         "owen-it/laravel-auditing": "^14.0",
+        "phpoffice/phpspreadsheet": "^5.9",
         "uspdev/replicado": "^1.27",
         "uspdev/senhaunica-socialite": "^4.5"
     },

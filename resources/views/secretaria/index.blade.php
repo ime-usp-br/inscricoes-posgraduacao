@@ -70,6 +70,10 @@
                                class="inline-flex justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
                                 Ver inscrições
                             </a>
+                            <a href="{{ route('inscricoes.relatorio') }}"
+                               class="inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800">
+                                Gerar relatório
+                            </a>
                         </div>
                     </div>
                 </div>

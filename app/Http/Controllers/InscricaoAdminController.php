@@ -14,6 +14,8 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InscricaoAdminController extends Controller
@@ -108,6 +110,66 @@ class InscricaoAdminController extends Controller
         Inscricao::atribuirFlagDuplicataPorEmail([$inscricao]);
 
         return view('inscricao.admin.show', compact('inscricao'));
+    }
+
+    public function relatorio(): StreamedResponse
+    {
+        $inscricoes = Inscricao::query()
+            ->with(['disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2'])
+            ->where('etapa_concluida', '>=', 3)
+            ->orderBy('nome_completo')
+            ->orderBy('id')
+            ->get();
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Aprovados');
+
+        $sheet->fromArray([
+            'Nome completo',
+            'Disciplina 1',
+            'Disciplina 2',
+            'Disciplina 3',
+        ], null, 'A1');
+
+        $row = 2;
+        foreach ($inscricoes as $inscricao) {
+            $disciplinas = $inscricao->disciplinasAprovadasSecretariaEProfessor();
+
+            if ($disciplinas === []) {
+                continue;
+            }
+
+            $labels = array_map(
+                fn (DisciplinaOfertada $d): string => $d->codigo_completo.' — '.$d->nome,
+                $disciplinas
+            );
+
+            $sheet->fromArray([
+                $inscricao->nome_completo,
+                $labels[0] ?? '',
+                $labels[1] ?? '',
+                $labels[2] ?? '',
+            ], null, 'A'.$row);
+
+            $row++;
+        }
+
+        foreach (range('A', 'D') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $sheet->getStyle('A1:D1')->getFont()->setBold(true);
+
+        $filename = 'relatorio-aprovados-'.now()->format('Y-m-d-His').'.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet): void {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+            $spreadsheet->disconnectWorksheets();
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
 
     public function download(Inscricao $inscricao, string $campo): StreamedResponse

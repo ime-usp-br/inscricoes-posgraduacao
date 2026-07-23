@@ -325,6 +325,27 @@ class Inscricao extends Model
         ));
     }
 
+    /**
+     * Disciplinas aprovadas pela secretaria e pelo professor.
+     *
+     * @return list<DisciplinaOfertada>
+     */
+    public function disciplinasAprovadasSecretariaEProfessor(): array
+    {
+        $aprovadas = [];
+
+        foreach ($this->disciplinasParaAprovacaoSecretaria() as $item) {
+            if (
+                $this->aprovacaoSecretariaParaSlot($item['slot']) === AprovacaoSecretariaDisciplina::Aprovado
+                && $this->aprovacaoProfessorParaSlot($item['slot']) === AprovacaoProfessorDisciplina::Aprovado
+            ) {
+                $aprovadas[] = $item['disciplina'];
+            }
+        }
+
+        return $aprovadas;
+    }
+
     public function aprovacaoProfessorParaSlot(string $slot): ?AprovacaoProfessorDisciplina
     {
         return match ($slot) {

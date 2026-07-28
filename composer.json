@@ -15,6 +15,7 @@
         "livewire/volt": "^1.7.0",
         "owen-it/laravel-auditing": "^14.0",
         "phpoffice/phpspreadsheet": "^5.9",
+        "symfony/console": "7.3.*",
         "uspdev/replicado": "^1.27",
         "uspdev/senhaunica-socialite": "^4.5"
     },
@@ -77,6 +78,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.2.32"
         }
     },
     "minimum-stability": "stable",

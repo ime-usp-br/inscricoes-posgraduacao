@@ -73,6 +73,8 @@ class InscricaoProfessorController extends Controller
             ->orderByDesc('semestre')
             ->get();
 
+        $periodoAtivo = Periodo::ativoParaInscricoes();
+
         return view('inscricao.professor.index', compact(
             'inscricoes',
             'periodos',
@@ -80,6 +82,7 @@ class InscricaoProfessorController extends Controller
             'search',
             'periodoId',
             'disciplinaId',
+            'periodoAtivo',
         ));
     }
 

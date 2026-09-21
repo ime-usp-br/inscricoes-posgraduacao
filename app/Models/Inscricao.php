@@ -326,6 +326,57 @@ class Inscricao extends Model
     }
 
     /**
+     * Inscrições que o usuário pode avaliar como professor: ao menos um slot aprovado pela
+     * secretaria cuja disciplina tem o usuário como responsável. Admin enxerga todas.
+     *
+     * @param  Builder<Inscricao>  $query
+     * @return Builder<Inscricao>
+     */
+    public function scopeAvaliavelPeloProfessor(Builder $query, User $user): Builder
+    {
+        if ($user->isAdmin()) {
+            return $query->comDisciplinaAprovadaPelaSecretaria();
+        }
+
+        $disciplinasDoProfessor = DisciplinaOfertada::query()->responsavelPor($user)->select('id');
+
+        $slots = [
+            ['disciplina_obrigatoria_id', 'aprovacao_obrigatoria_secretaria'],
+            ['disciplina_opcional_1_id', 'aprovacao_opcional_1_secretaria'],
+            ['disciplina_opcional_2_id', 'aprovacao_opcional_2_secretaria'],
+        ];
+
+        return $query->where(function (Builder $q) use ($slots, $disciplinasDoProfessor): void {
+            foreach ($slots as [$campoDisciplina, $campoAprovacao]) {
+                $q->orWhere(function (Builder $slot) use ($campoDisciplina, $campoAprovacao, $disciplinasDoProfessor): void {
+                    $slot->where($campoAprovacao, AprovacaoSecretariaDisciplina::Aprovado)
+                        ->whereIn($campoDisciplina, $disciplinasDoProfessor);
+                });
+            }
+        });
+    }
+
+    /**
+     * Disciplinas liberadas para avaliação do professor e que o usuário pode avaliar.
+     * Admin avalia todas.
+     *
+     * @return list<array{slot: string, disciplina: DisciplinaOfertada, aprovacao: string, justificativa: ?string}>
+     */
+    public function disciplinasParaAprovacaoProfessorDe(User $user): array
+    {
+        $disciplinas = $this->disciplinasParaAprovacaoProfessor();
+
+        if ($user->isAdmin()) {
+            return $disciplinas;
+        }
+
+        return array_values(array_filter(
+            $disciplinas,
+            fn (array $item): bool => $item['disciplina']->professorResponsavelPor($user)
+        ));
+    }
+
+    /**
      * Disciplinas aprovadas pela secretaria e pelo professor.
      *
      * @return list<DisciplinaOfertada>

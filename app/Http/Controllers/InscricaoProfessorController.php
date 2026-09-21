@@ -26,7 +26,7 @@ class InscricaoProfessorController extends Controller
     {
         $usuario = $this->usuario();
         $search = trim($request->string('q')->toString());
-        $periodoId = $request->integer('periodo_id');
+        $periodoId = Periodo::ativoParaInscricoes()->id;
         $disciplinaId = $request->integer('disciplina_id');
 
         $disciplinas = DisciplinaOfertada::query()
@@ -68,21 +68,12 @@ class InscricaoProfessorController extends Controller
         $inscricoes = $query->paginate(20)->withQueryString();
         Inscricao::atribuirFlagDuplicataPorEmail($inscricoes);
 
-        $periodos = Periodo::query()
-            ->orderByDesc('ano')
-            ->orderByDesc('semestre')
-            ->get();
-
-        $periodoAtivo = Periodo::ativoParaInscricoes();
-
         return view('inscricao.professor.index', compact(
             'inscricoes',
-            'periodos',
             'disciplinas',
             'search',
             'periodoId',
             'disciplinaId',
-            'periodoAtivo',
         ));
     }
 

@@ -1,10 +1,14 @@
 @props([
     'inscricao',
     'editavel' => true,
+    'usuario' => null,
 ])
 
 @php
-    $disciplinasProfessor = $inscricao->disciplinasParaAprovacaoProfessor();
+    // Com $usuario, lista só o que ele pode avaliar; sem, é a visão somente leitura (secretaria).
+    $disciplinasProfessor = $usuario !== null
+        ? $inscricao->disciplinasParaAprovacaoProfessorDe($usuario)
+        : $inscricao->disciplinasParaAprovacaoProfessor();
 @endphp
 
 @if ($disciplinasProfessor !== [])

@@ -9,10 +9,13 @@ use App\Http\Requests\AprovarDisciplinaProfessorRequest;
 use App\Models\DisciplinaOfertada;
 use App\Models\Inscricao;
 use App\Models\Periodo;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InscricaoProfessorController extends Controller
@@ -21,14 +24,28 @@ class InscricaoProfessorController extends Controller
 
     public function index(Request $request): View
     {
+        $usuario = $this->usuario();
         $search = trim($request->string('q')->toString());
         $periodoId = $request->integer('periodo_id');
         $disciplinaId = $request->integer('disciplina_id');
 
+        $disciplinas = DisciplinaOfertada::query()
+            ->with('periodo')
+            ->when(! $usuario->isAdmin(), fn (Builder $q) => $q->responsavelPor($usuario))
+            ->orderByDesc('periodo_id')
+            ->orderBy('departamento')
+            ->orderBy('codigo')
+            ->get();
+
+        // Ignora filtro por disciplina que o usuário não pode avaliar.
+        if ($disciplinaId > 0 && ! $disciplinas->contains('id', $disciplinaId)) {
+            $disciplinaId = 0;
+        }
+
         $query = Inscricao::query()
             ->with(['periodo', 'disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2'])
             ->where('etapa_concluida', '>=', 3)
-            ->comDisciplinaAprovadaPelaSecretaria()
+            ->avaliavelPeloProfessor($usuario)
             ->orderByDesc('concluido_em')
             ->orderByDesc('id');
 
@@ -56,13 +73,6 @@ class InscricaoProfessorController extends Controller
             ->orderByDesc('semestre')
             ->get();
 
-        $disciplinas = DisciplinaOfertada::query()
-            ->with('periodo')
-            ->orderByDesc('periodo_id')
-            ->orderBy('departamento')
-            ->orderBy('codigo')
-            ->get();
-
         return view('inscricao.professor.index', compact(
             'inscricoes',
             'periodos',
@@ -75,7 +85,7 @@ class InscricaoProfessorController extends Controller
 
     public function show(Inscricao $inscricao): View
     {
-        if (! $inscricao->disciplinasParaAprovacaoProfessor()) {
+        if ($inscricao->disciplinasParaAprovacaoProfessorDe($this->usuario()) === []) {
             abort(404);
         }
 
@@ -92,7 +102,7 @@ class InscricaoProfessorController extends Controller
 
     public function download(Inscricao $inscricao, string $campo): StreamedResponse
     {
-        if (! $inscricao->disciplinasParaAprovacaoProfessor()) {
+        if ($inscricao->disciplinasParaAprovacaoProfessorDe($this->usuario()) === []) {
             abort(404);
         }
 
@@ -122,13 +132,15 @@ class InscricaoProfessorController extends Controller
         Inscricao $inscricao,
         bool $aprovar,
     ): RedirectResponse {
+        $slot = $request->string('disciplina')->toString();
+
+        Gate::authorize('avaliarDisciplinaComoProfessor', [$inscricao, $slot]);
+
         if ($inscricao->etapa_concluida < 3) {
             return redirect()
                 ->route('professor.inscricoes.show', $inscricao)
                 ->withErrors(['aprovacao' => 'A inscrição ainda não foi concluída pelo candidato.']);
         }
-
-        $slot = $request->string('disciplina')->toString();
 
         if ($inscricao->aprovacaoSecretariaParaSlot($slot) !== AprovacaoSecretariaDisciplina::Aprovado) {
             return redirect()
@@ -174,5 +186,14 @@ class InscricaoProfessorController extends Controller
         return redirect()
             ->route('professor.inscricoes.show', $inscricao)
             ->with('success', "Disciplina {$codigo} {$mensagem} pelo professor.");
+    }
+
+    private function usuario(): User
+    {
+        $usuario = Auth::user();
+
+        abort_unless($usuario instanceof User, 403);
+
+        return $usuario;
     }
 }

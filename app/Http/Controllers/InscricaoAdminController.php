@@ -25,7 +25,6 @@ class InscricaoAdminController extends Controller
     public function index(Request $request): View
     {
         $search = trim($request->string('q')->toString());
-        $periodoId = $request->integer('periodo_id');
         $disciplinaId = $request->integer('disciplina_id');
         $filtroAprovacao = $request->string('aprovacao')->toString();
         $filtroPagamento = match ($request->string('pagamento')->toString()) {
@@ -33,6 +32,9 @@ class InscricaoAdminController extends Controller
             'pago', 'nao_aplicavel' => 'demais',
             default => $request->string('pagamento')->toString(),
         };
+
+        $periodoAtivo = Periodo::ativoParaInscricoes();
+        $periodoId = $request->integer('periodo_id', $periodoAtivo->id);
 
         $query = Inscricao::query()
             ->with(['periodo', 'disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2'])
@@ -87,8 +89,6 @@ class InscricaoAdminController extends Controller
             ->orderBy('codigo')
             ->get();
 
-        $periodoAtivo = Periodo::ativoParaInscricoes();
-
         return view('inscricao.admin.index', compact(
             'inscricoes',
             'periodos',
@@ -96,7 +96,6 @@ class InscricaoAdminController extends Controller
             'search',
             'periodoId',
             'disciplinaId',
-            'periodoAtivo',
             'filtroAprovacao',
             'filtroPagamento',
         ));

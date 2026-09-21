@@ -32,7 +32,7 @@
                             <select name="periodo_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm">
                                 <option value="">Todos</option>
                                 @foreach ($periodos as $p)
-                                    <option value="{{ $p->id }}" @selected($periodoId > 0 ? (int) $periodoId === (int) $p->id : (int) $periodoAtivo->id === (int) $p->id)>
+                                    <option value="{{ $p->id }}" @selected((int) $periodoId === (int) $p->id)>
                                         {{ $p->ano }}/{{ $p->semestre }}
                                     </option>
                                 @endforeach

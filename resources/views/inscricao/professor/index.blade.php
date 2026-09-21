@@ -91,16 +91,10 @@
                                         </td>
                                         <td class="px-4 py-4 text-gray-800 dark:text-gray-200">
                                             @php
-                                                $codigos = [];
-                                                if ($i->disciplinaObrigatoria) {
-                                                    $codigos[] = $i->disciplinaObrigatoria->codigo_completo;
-                                                }
-                                                if ($i->disciplinaOpcional1) {
-                                                    $codigos[] = $i->disciplinaOpcional1->codigo_completo;
-                                                }
-                                                if ($i->disciplinaOpcional2) {
-                                                    $codigos[] = $i->disciplinaOpcional2->codigo_completo;
-                                                }
+                                                $codigos = array_map(
+                                                    fn (array $item): string => $item['disciplina']->codigo_completo,
+                                                    $i->disciplinasParaAprovacaoProfessorDe(auth()->user())
+                                                );
                                             @endphp
                                             {{ count($codigos) ? implode(', ', $codigos) : '—' }}
                                         </td>

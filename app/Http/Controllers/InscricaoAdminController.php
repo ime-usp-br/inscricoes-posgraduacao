@@ -87,6 +87,8 @@ class InscricaoAdminController extends Controller
             ->orderBy('codigo')
             ->get();
 
+        $periodoAtivo = Periodo::ativoParaInscricoes();
+
         return view('inscricao.admin.index', compact(
             'inscricoes',
             'periodos',
@@ -94,6 +96,7 @@ class InscricaoAdminController extends Controller
             'search',
             'periodoId',
             'disciplinaId',
+            'periodoAtivo',
             'filtroAprovacao',
             'filtroPagamento',
         ));

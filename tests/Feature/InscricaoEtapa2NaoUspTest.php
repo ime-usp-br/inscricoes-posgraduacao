@@ -41,7 +41,11 @@ class InscricaoEtapa2NaoUspTest extends TestCase
     public function etapa_2_nao_usp_rejects_pdf_larger_than_one_megabyte(): void
     {
         $periodo = Periodo::factory()->create();
-        $inscricao = $this->inscricaoNaoUspNaoFormado($periodo->id);
+        $inscricao = Inscricao::factory()->create([
+            'periodo_id' => $periodo->id,
+            'aluno_usp' => false,
+            'etapa_concluida' => 1,
+        ]);
 
         $pdfPequeno = UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf');
         $pdfGrande = UploadedFile::fake()->create('grande.pdf', 1025, 'application/pdf');

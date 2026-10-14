@@ -203,6 +203,44 @@ class Inscricao extends Model
         return $aprovadas;
     }
 
+    /**
+     * Aprova a inscrição do aluno como um todo: todas as disciplinas marcadas
+     * como aprovadas pela secretaria.
+     */
+    public function aprovarPelaSecretaria(): void
+    {
+        foreach ($this->disciplinasParaAprovacaoSecretaria() as $item) {
+            match ($item['slot']) {
+                'obrigatoria' => ($this->aprovacao_obrigatoria_secretaria = AprovacaoSecretariaDisciplina::Aprovado),
+                'opcional_1' => ($this->aprovacao_opcional_1_secretaria = AprovacaoSecretariaDisciplina::Aprovado),
+                'opcional_2' => ($this->aprovacao_opcional_2_secretaria = AprovacaoSecretariaDisciplina::Aprovado),
+                default => null,
+            };
+        }
+
+        $this->sincronizarStatusSecretaria();
+        $this->save();
+    }
+
+    /**
+     * Reprova a inscrição do aluno como um todo: todas as disciplinas marcadas
+     * como reprovadas pela secretaria.
+     */
+    public function reprovarPelaSecretaria(): void
+    {
+        foreach ($this->disciplinasParaAprovacaoSecretaria() as $item) {
+            match ($item['slot']) {
+                'obrigatoria' => ($this->aprovacao_obrigatoria_secretaria = AprovacaoSecretariaDisciplina::Reprovado),
+                'opcional_1' => ($this->aprovacao_opcional_1_secretaria = AprovacaoSecretariaDisciplina::Reprovado),
+                'opcional_2' => ($this->aprovacao_opcional_2_secretaria = AprovacaoSecretariaDisciplina::Reprovado),
+                default => null,
+            };
+        }
+
+        $this->sincronizarStatusSecretaria();
+        $this->save();
+    }
+
     private function marcarDisciplinaSecretaria(string $slot, AprovacaoSecretariaDisciplina $aprovacao): void
     {
         $field = match ($slot) {
@@ -322,6 +360,57 @@ class Inscricao extends Model
         return array_values(array_filter(
             $this->disciplinasParaAprovacaoSecretaria(),
             fn (array $item): bool => $this->{$item['aprovacao']} === AprovacaoSecretariaDisciplina::Aprovado
+        ));
+    }
+
+    /**
+     * Inscrições que o usuário pode avaliar como professor: ao menos um slot aprovado pela
+     * secretaria cuja disciplina tem o usuário como responsável. Admin enxerga todas.
+     *
+     * @param  Builder<Inscricao>  $query
+     * @return Builder<Inscricao>
+     */
+    public function scopeAvaliavelPeloProfessor(Builder $query, User $user): Builder
+    {
+        if ($user->isAdmin()) {
+            return $query->comDisciplinaAprovadaPelaSecretaria();
+        }
+
+        $disciplinasDoProfessor = DisciplinaOfertada::query()->responsavelPor($user)->select('id');
+
+        $slots = [
+            ['disciplina_obrigatoria_id', 'aprovacao_obrigatoria_secretaria'],
+            ['disciplina_opcional_1_id', 'aprovacao_opcional_1_secretaria'],
+            ['disciplina_opcional_2_id', 'aprovacao_opcional_2_secretaria'],
+        ];
+
+        return $query->where(function (Builder $q) use ($slots, $disciplinasDoProfessor): void {
+            foreach ($slots as [$campoDisciplina, $campoAprovacao]) {
+                $q->orWhere(function (Builder $slot) use ($campoDisciplina, $campoAprovacao, $disciplinasDoProfessor): void {
+                    $slot->where($campoAprovacao, AprovacaoSecretariaDisciplina::Aprovado)
+                        ->whereIn($campoDisciplina, $disciplinasDoProfessor);
+                });
+            }
+        });
+    }
+
+    /**
+     * Disciplinas liberadas para avaliação do professor e que o usuário pode avaliar.
+     * Admin avalia todas.
+     *
+     * @return list<array{slot: string, disciplina: DisciplinaOfertada, aprovacao: string, justificativa: ?string}>
+     */
+    public function disciplinasParaAprovacaoProfessorDe(User $user): array
+    {
+        $disciplinas = $this->disciplinasParaAprovacaoProfessor();
+
+        if ($user->isAdmin()) {
+            return $disciplinas;
+        }
+
+        return array_values(array_filter(
+            $disciplinas,
+            fn (array $item): bool => $item['disciplina']->professorResponsavelPor($user)
         ));
     }
 

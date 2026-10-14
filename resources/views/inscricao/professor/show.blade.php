@@ -28,7 +28,7 @@
                 @include('inscricao._aprovacao-secretaria', ['inscricao' => $inscricao, 'editavel' => false])
             @endif
 
-            @include('inscricao._aprovacao-professor', ['inscricao' => $inscricao, 'editavel' => true])
+            @include('inscricao._aprovacao-professor', ['inscricao' => $inscricao, 'editavel' => true, 'usuario' => auth()->user()])
         </div>
     </div>
 </x-app-layout>

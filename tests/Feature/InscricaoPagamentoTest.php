@@ -128,15 +128,6 @@ class InscricaoPagamentoTest extends TestCase
         Http::fake(function ($request) {
             $url = $request->url();
 
-            if (str_contains($url, 'verificar')) {
-                return Http::response([
-                    'idfpix' => 'PIX-TEST-001',
-                    'status' => 'Concluído',
-                    'dataPag' => now()->format('d/m/Y H:i:s'),
-                    'qrCode' => '000201',
-                ]);
-            }
-
             if (str_contains($url, '/pix/gerar')) {
                 return Http::response([
                     'idfpix' => 'PIX-TEST-001',
@@ -147,9 +138,9 @@ class InscricaoPagamentoTest extends TestCase
 
             return Http::response([
                 'idfpix' => 'PIX-TEST-001',
-                'status' => 'Ativo',
+                'status' => 'Concluído',
+                'dataPag' => now()->format('d/m/Y H:i:s'),
                 'qrCode' => '000201',
-                'qrCodeImgBase64' => base64_encode('qr'),
             ]);
         });
 

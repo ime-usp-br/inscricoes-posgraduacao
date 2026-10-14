@@ -18,7 +18,7 @@ class AprovarDisciplinaSecretariaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'disciplina' => ['required', 'string', Rule::in(['obrigatoria', 'opcional_1', 'opcional_2'])],
+            'disciplina' => ['nullable', 'string', Rule::in(['obrigatoria', 'opcional_1', 'opcional_2'])],
         ];
     }
 }

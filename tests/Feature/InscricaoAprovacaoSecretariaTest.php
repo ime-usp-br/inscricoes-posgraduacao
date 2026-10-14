@@ -304,8 +304,8 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
             ->get(route('inscricoes.show', $inscricao))
             ->assertOk()
             ->assertSee('Aprovação pela Secretaria (1ª etapa)')
-            ->assertSee("Aprovar {$codigo}", false)
-            ->assertSee("Reprovar {$codigo}", false);
+            ->assertSee('Aprovar inscrição', false)
+            ->assertSee('Reprovar inscrição', false);
     }
 
     #[Test]

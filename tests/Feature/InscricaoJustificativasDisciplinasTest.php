@@ -105,6 +105,10 @@ class InscricaoJustificativasDisciplinasTest extends TestCase
                 'justificativa_disciplina_opcional_2' => 'A opcional 2 amplia meu repertório metodológico.',
             ]);
 
+        foreach ([$inscricao->disciplinaObrigatoria, $inscricao->disciplinaOpcional1, $inscricao->disciplinaOpcional2] as $disciplina) {
+            $disciplina?->update(['professor_email' => $professor->email]);
+        }
+
         $this->actingAs($admin)
             ->get(route('inscricoes.show', $inscricao))
             ->assertOk()

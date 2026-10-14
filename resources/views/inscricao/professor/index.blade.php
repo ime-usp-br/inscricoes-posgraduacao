@@ -79,7 +79,15 @@
                                                 $disciplinasBadge = [];
                                                 foreach ($i->disciplinasParaAprovacaoProfessorDe(auth()->user()) as $item) {
                                                     $disciplina = $item['disciplina'];
-                                                    $aprovacao = $i->{$item['aprovacao']};
+                                                    $campoProfessor = match ($item['slot']) {
+                                                        'obrigatoria' => 'aprovacao_obrigatoria_professor',
+                                                        'opcional_1' => 'aprovacao_opcional_1_professor',
+                                                        'opcional_2' => 'aprovacao_opcional_2_professor',
+                                                        default => $item['aprovacao'],
+                                                    };
+                                                    $aprovacao = $i->{$campoProfessor};
+
+                                                    echo $item['aprovacao'];
 
                                                     $status = match (true) {
                                                         $aprovacao === \App\Enums\AprovacaoProfessorDisciplina::Aprovado => 'aprovado',

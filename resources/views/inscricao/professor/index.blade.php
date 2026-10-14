@@ -87,8 +87,6 @@
                                                     };
                                                     $aprovacao = $i->{$campoProfessor};
 
-                                                    echo $item['aprovacao'];
-
                                                     $status = match (true) {
                                                         $aprovacao === \App\Enums\AprovacaoProfessorDisciplina::Aprovado => 'aprovado',
                                                         $aprovacao === \App\Enums\AprovacaoProfessorDisciplina::Reprovado => 'reprovado',

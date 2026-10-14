@@ -21,23 +21,12 @@
                     </p>
 
                     <form method="GET" action="{{ route('professor.inscricoes.index') }}" class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                        <div class="md:col-span-4">
+                        <div class="md:col-span-6">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Busca por nome</label>
                             <input type="search" name="q" value="{{ $search }}" placeholder="Nome completo..."
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                         </div>
-                        <div class="md:col-span-3">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Período</label>
-                            <select name="periodo_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm">
-                                <option value="">Todos</option>
-                                @foreach ($periodos as $p)
-                                    <option value="{{ $p->id }}" @selected((int) $periodoId === (int) $p->id)>
-                                        {{ $p->ano }}/{{ $p->semestre }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="md:col-span-3">
+                        <div class="md:col-span-4">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Disciplina</label>
                             <select name="disciplina_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm">
                                 <option value="">Todas</option>
@@ -91,16 +80,10 @@
                                         </td>
                                         <td class="px-4 py-4 text-gray-800 dark:text-gray-200">
                                             @php
-                                                $codigos = [];
-                                                if ($i->disciplinaObrigatoria) {
-                                                    $codigos[] = $i->disciplinaObrigatoria->codigo_completo;
-                                                }
-                                                if ($i->disciplinaOpcional1) {
-                                                    $codigos[] = $i->disciplinaOpcional1->codigo_completo;
-                                                }
-                                                if ($i->disciplinaOpcional2) {
-                                                    $codigos[] = $i->disciplinaOpcional2->codigo_completo;
-                                                }
+                                                $codigos = array_map(
+                                                    fn (array $item): string => $item['disciplina']->codigo_completo,
+                                                    $i->disciplinasParaAprovacaoProfessorDe(auth()->user())
+                                                );
                                             @endphp
                                             {{ count($codigos) ? implode(', ', $codigos) : '—' }}
                                         </td>

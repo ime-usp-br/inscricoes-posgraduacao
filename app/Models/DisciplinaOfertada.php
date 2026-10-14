@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,6 +30,41 @@ class DisciplinaOfertada extends Model
     public function getCodigoCompletoAttribute(): string
     {
         return strtoupper($this->departamento).str_pad((string) $this->codigo, 4, '0', STR_PAD_LEFT);
+    }
+
+    public static function normalizarEmail(?string $email): ?string
+    {
+        $normalizado = strtolower(trim((string) $email));
+
+        return $normalizado === '' ? null : $normalizado;
+    }
+
+    /**
+     * Único ponto que define "professor responsável": e-mail cadastrado na disciplina
+     * igual ao e-mail do usuário (sem diferenciar maiúsculas/minúsculas).
+     */
+    public function professorResponsavelPor(User $user): bool
+    {
+        $esperado = self::normalizarEmail($this->professor_email);
+
+        return $esperado !== null && $esperado === self::normalizarEmail($user->email);
+    }
+
+    /**
+     * Mesma regra de {@see professorResponsavelPor()}, para uso em consultas.
+     *
+     * @param  Builder<DisciplinaOfertada>  $query
+     * @return Builder<DisciplinaOfertada>
+     */
+    public function scopeResponsavelPor(Builder $query, User $user): Builder
+    {
+        $email = self::normalizarEmail($user->email);
+
+        if ($email === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereRaw('LOWER(TRIM(professor_email)) = ?', [$email]);
     }
 
     /**

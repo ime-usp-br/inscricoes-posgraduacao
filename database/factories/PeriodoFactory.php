@@ -12,14 +12,18 @@ class PeriodoFactory extends Factory
 {
     protected $model = Periodo::class;
 
+    private static int $periodoFactoryCounter = 0;
+
     /**
      * @return array<string, mixed>
      */
     public function definition(): array
     {
+        $suffix = self::$periodoFactoryCounter++;
+
         return [
-            'ano' => (int) date('Y') + $this->faker->unique()->numberBetween(0, 100000),
-            'semestre' => $this->faker->randomElement([1, 2]),
+            'ano' => (int) date('Y') + intdiv($suffix, 2),
+            'semestre' => ($suffix % 2) + 1,
             'data_inicio_inscricao' => now()->subWeek(),
             'data_fim_inscricao' => now()->addMonth(),
         ];

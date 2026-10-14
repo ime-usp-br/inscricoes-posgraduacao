@@ -203,6 +203,44 @@ class Inscricao extends Model
         return $aprovadas;
     }
 
+    /**
+     * Aprova a inscrição do aluno como um todo: todas as disciplinas marcadas
+     * como aprovadas pela secretaria.
+     */
+    public function aprovarPelaSecretaria(): void
+    {
+        foreach ($this->disciplinasParaAprovacaoSecretaria() as $item) {
+            match ($item['slot']) {
+                'obrigatoria' => ($this->aprovacao_obrigatoria_secretaria = AprovacaoSecretariaDisciplina::Aprovado),
+                'opcional_1' => ($this->aprovacao_opcional_1_secretaria = AprovacaoSecretariaDisciplina::Aprovado),
+                'opcional_2' => ($this->aprovacao_opcional_2_secretaria = AprovacaoSecretariaDisciplina::Aprovado),
+                default => null,
+            };
+        }
+
+        $this->sincronizarStatusSecretaria();
+        $this->save();
+    }
+
+    /**
+     * Reprova a inscrição do aluno como um todo: todas as disciplinas marcadas
+     * como reprovadas pela secretaria.
+     */
+    public function reprovarPelaSecretaria(): void
+    {
+        foreach ($this->disciplinasParaAprovacaoSecretaria() as $item) {
+            match ($item['slot']) {
+                'obrigatoria' => ($this->aprovacao_obrigatoria_secretaria = AprovacaoSecretariaDisciplina::Reprovado),
+                'opcional_1' => ($this->aprovacao_opcional_1_secretaria = AprovacaoSecretariaDisciplina::Reprovado),
+                'opcional_2' => ($this->aprovacao_opcional_2_secretaria = AprovacaoSecretariaDisciplina::Reprovado),
+                default => null,
+            };
+        }
+
+        $this->sincronizarStatusSecretaria();
+        $this->save();
+    }
+
     private function marcarDisciplinaSecretaria(string $slot, AprovacaoSecretariaDisciplina $aprovacao): void
     {
         $field = match ($slot) {

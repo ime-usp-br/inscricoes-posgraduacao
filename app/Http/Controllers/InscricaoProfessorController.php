@@ -46,13 +46,16 @@ class InscricaoProfessorController extends Controller
         $query = Inscricao::query()
             ->with(['periodo', 'disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2'])
             ->where('etapa_concluida', '>=', 3)
-            ->where('periodo_id', $periodoAtivo->id)
             ->avaliavelPeloProfessor($usuario)
             ->orderByDesc('concluido_em')
             ->orderByDesc('id');
 
         if ($search !== '') {
             $query->where('nome_completo', 'like', '%'.$search.'%');
+        }
+
+        if ($periodoAtivo) {
+            $query->where('periodo_id', $periodoAtivo->id);
         }
 
         if ($disciplinaId > 0) {

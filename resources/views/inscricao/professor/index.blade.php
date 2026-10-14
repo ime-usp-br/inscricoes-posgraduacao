@@ -54,7 +54,6 @@
                                     @if ($mostrarColunaSecretaria)
                                         <th class="px-4 py-3 font-semibold">Secretaria</th>
                                     @endif
-                                    <th class="px-4 py-3 font-semibold">Professor</th>
                                     <th class="px-4 py-3 font-semibold">Disciplina(s)</th>
                                     <th class="px-4 py-3 font-semibold">Período</th>
                                 </tr>
@@ -75,17 +74,37 @@
                                                 <x-inscricao-resumo-etapa-badge :resumo="$i->resumoAprovacaoSecretaria()" etapa="secretaria" />
                                             </td>
                                         @endif
-                                        <td class="px-4 py-4">
-                                            <x-inscricao-resumo-etapa-badge :resumo="$i->resumoAprovacaoProfessor()" etapa="professor" />
-                                        </td>
                                         <td class="px-4 py-4 text-gray-800 dark:text-gray-200">
                                             @php
-                                                $codigos = array_map(
-                                                    fn (array $item): string => $item['disciplina']->codigo_completo,
-                                                    $i->disciplinasParaAprovacaoProfessorDe(auth()->user())
-                                                );
+                                                $disciplinasBadge = [];
+                                                foreach ($i->disciplinasParaAprovacaoProfessorDe(auth()->user()) as $item) {
+                                                    $disciplina = $item['disciplina'];
+                                                    $aprovacao = $i->{$item['aprovacao']};
+
+                                                    $status = match (true) {
+                                                        $aprovacao === \App\Enums\AprovacaoProfessorDisciplina::Aprovado => 'aprovado',
+                                                        $aprovacao === \App\Enums\AprovacaoProfessorDisciplina::Reprovado => 'reprovado',
+                                                        default => 'pendente',
+                                                    };
+
+                                                    $disciplinasBadge[] = [
+                                                        'codigo' => $disciplina->codigo_completo,
+                                                        'status' => $status,
+                                                    ];
+                                                }
                                             @endphp
-                                            {{ count($codigos) ? implode(', ', $codigos) : '—' }}
+                                            @if (count($disciplinasBadge))
+                                                <div class="flex flex-wrap gap-1.5">
+                                                    @foreach ($disciplinasBadge as $item)
+                                                        <x-inscricao-disciplina-badge
+                                                            :codigo="$item['codigo']"
+                                                            :status="$item['status']"
+                                                        />
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                —
+                                            @endif
                                         </td>
                                         <td class="px-4 py-4 rounded-r-lg">
                                             @if ($i->periodo)
@@ -97,7 +116,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="{{ $mostrarColunaSecretaria ? 5 : 4 }}" class="px-4 py-8 text-center text-gray-600 dark:text-gray-400">
+                                        <td colspan="{{ $mostrarColunaSecretaria ? 4 : 3 }}" class="px-4 py-8 text-center text-gray-600 dark:text-gray-400">
                                             Nenhuma inscrição disponível para avaliação do professor.
                                         </td>
                                     </tr>

@@ -6,8 +6,8 @@ use App\Enums\AprovacaoProfessorDisciplina;
 use App\Enums\AprovacaoSecretariaDisciplina;
 use App\Enums\InscricaoStatus;
 use App\Enums\PagamentoDisciplinaStatus;
-use App\Enums\ResumoPagamentoInscricao;
 use App\Enums\ResumoAprovacaoInscricao;
+use App\Enums\ResumoPagamentoInscricao;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -57,6 +57,7 @@ class Inscricao extends Model
         'aprovacao_obrigatoria_professor',
         'aprovacao_opcional_1_professor',
         'aprovacao_opcional_2_professor',
+        'justificativa_reprovacao_secretaria',
         'pagamentos_disciplinas',
         'pix_idfpix',
         'pix_status',
@@ -152,9 +153,9 @@ class Inscricao extends Model
         $this->marcarDisciplinaSecretaria($slot, AprovacaoSecretariaDisciplina::Aprovado);
     }
 
-    public function marcarDisciplinaReprovadaPelaSecretaria(string $slot): void
+    public function marcarDisciplinaReprovadaPelaSecretaria(string $slot, ?string $justificativa = null): void
     {
-        $this->marcarDisciplinaSecretaria($slot, AprovacaoSecretariaDisciplina::Reprovado);
+        $this->marcarDisciplinaSecretaria($slot, AprovacaoSecretariaDisciplina::Reprovado, $justificativa);
     }
 
     public function podeAprovarEmBlocoSecretaria(): bool
@@ -196,6 +197,7 @@ class Inscricao extends Model
         }
 
         if ($aprovadas > 0) {
+            $this->justificativa_reprovacao_secretaria = null;
             $this->sincronizarStatusSecretaria();
             $this->save();
         }
@@ -218,6 +220,8 @@ class Inscricao extends Model
             };
         }
 
+        $this->justificativa_reprovacao_secretaria = null;
+
         $this->sincronizarStatusSecretaria();
         $this->save();
     }
@@ -226,7 +230,7 @@ class Inscricao extends Model
      * Reprova a inscrição do aluno como um todo: todas as disciplinas marcadas
      * como reprovadas pela secretaria.
      */
-    public function reprovarPelaSecretaria(): void
+    public function reprovarPelaSecretaria(?string $justificativa = null): void
     {
         foreach ($this->disciplinasParaAprovacaoSecretaria() as $item) {
             match ($item['slot']) {
@@ -237,12 +241,24 @@ class Inscricao extends Model
             };
         }
 
+        $this->justificativa_reprovacao_secretaria = $this->normalizarJustificativaReprovacao($justificativa);
+
         $this->sincronizarStatusSecretaria();
         $this->save();
     }
 
-    private function marcarDisciplinaSecretaria(string $slot, AprovacaoSecretariaDisciplina $aprovacao): void
+    private function normalizarJustificativaReprovacao(?string $justificativa): ?string
     {
+        $texto = trim((string) $justificativa);
+
+        return $texto === '' ? null : $texto;
+    }
+
+    private function marcarDisciplinaSecretaria(
+        string $slot,
+        AprovacaoSecretariaDisciplina $aprovacao,
+        ?string $justificativa = null,
+    ): void {
         $field = match ($slot) {
             'obrigatoria' => 'aprovacao_obrigatoria_secretaria',
             'opcional_1' => 'aprovacao_opcional_1_secretaria',
@@ -255,6 +271,13 @@ class Inscricao extends Model
         }
 
         $this->{$field} = $aprovacao;
+
+        if ($aprovacao === AprovacaoSecretariaDisciplina::Aprovado) {
+            $this->justificativa_reprovacao_secretaria = null;
+        } elseif (filled($justificativa)) {
+            $this->justificativa_reprovacao_secretaria = $this->normalizarJustificativaReprovacao($justificativa);
+        }
+
         $this->sincronizarStatusSecretaria();
         $this->save();
     }

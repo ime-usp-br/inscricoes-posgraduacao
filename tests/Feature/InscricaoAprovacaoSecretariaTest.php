@@ -415,4 +415,316 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
             ->assertSee($antiga->nome_completo)
             ->assertSee($recente->nome_completo);
     }
+
+    #[Test]
+    public function secretario_can_reject_inscription_with_justification(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($secretario)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => 'Documentação incompatível com o edital.',
+            ])
+            ->assertRedirect(route('inscricoes.show', $inscricao));
+
+        $inscricao->refresh();
+        $this->assertSame(AprovacaoSecretariaDisciplina::Reprovado, $inscricao->aprovacao_obrigatoria_secretaria);
+        $this->assertSame(InscricaoStatus::ReprovadoSecretaria, $inscricao->status);
+        $this->assertSame('Documentação incompatível com o edital.', $inscricao->justificativa_reprovacao_secretaria);
+    }
+
+    #[Test]
+    public function rejecting_inscription_without_justification_keeps_field_null(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($secretario)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao))
+            ->assertRedirect(route('inscricoes.show', $inscricao));
+
+        $inscricao->refresh();
+        $this->assertNull($inscricao->justificativa_reprovacao_secretaria);
+    }
+
+    #[Test]
+    public function rejecting_inscription_with_blank_justification_stores_null(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($secretario)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => "   \n  ",
+            ])
+            ->assertRedirect(route('inscricoes.show', $inscricao));
+
+        $inscricao->refresh();
+        $this->assertNull($inscricao->justificativa_reprovacao_secretaria);
+    }
+
+    #[Test]
+    public function approving_inscription_clears_rejection_justification(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => 'Reprovar por inconsistência.',
+            ]);
+
+        $inscricao->refresh();
+        $this->assertSame('Reprovar por inconsistência.', $inscricao->justificativa_reprovacao_secretaria);
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.aprovar-secretaria', $inscricao))
+            ->assertRedirect(route('inscricoes.show', $inscricao));
+
+        $inscricao->refresh();
+        $this->assertNull($inscricao->justificativa_reprovacao_secretaria);
+    }
+
+    #[Test]
+    public function bulk_approve_clears_rejection_justification(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => 'Reprovar por inconsistência.',
+            ]);
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.aprovar-bloco-secretaria'), [
+                'inscricoes' => [$inscricao->id],
+            ])
+            ->assertRedirect(route('inscricoes.index'));
+
+        $inscricao->refresh();
+        $this->assertSame(AprovacaoSecretariaDisciplina::Aprovado, $inscricao->aprovacao_obrigatoria_secretaria);
+        $this->assertNull($inscricao->justificativa_reprovacao_secretaria);
+    }
+
+    #[Test]
+    public function bulk_approve_does_not_set_justification_on_pending_inscricoes(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.aprovar-bloco-secretaria'), [
+                'inscricoes' => [$inscricao->id],
+            ])
+            ->assertRedirect(route('inscricoes.index'));
+
+        $inscricao->refresh();
+        $this->assertNull($inscricao->justificativa_reprovacao_secretaria);
+    }
+
+    #[Test]
+    public function professor_cannot_reject_inscription_via_secretaria_route(): void
+    {
+        $professor = User::factory()->create();
+        $professor->assignRole('Professor');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($professor)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => 'Tentativa indevida.',
+            ])
+            ->assertForbidden();
+
+        $inscricao->refresh();
+        $this->assertNull($inscricao->justificativa_reprovacao_secretaria);
+    }
+
+    #[Test]
+    public function professor_rejection_does_not_write_secretaria_justification(): void
+    {
+        $professor = User::factory()->create();
+        $professor->assignRole('Professor');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create([
+                'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+            ]);
+
+        $inscricao->disciplinaObrigatoria?->update(['professor_email' => $professor->email]);
+
+        $this->actingAs($professor)
+            ->post(route('professor.inscricoes.reprovar', $inscricao), [
+                'disciplina' => 'obrigatoria',
+                'justificativa' => 'Não deve ser gravada pela secretaria.',
+            ])
+            ->assertRedirect(route('professor.inscricoes.show', $inscricao));
+
+        $inscricao->refresh();
+        $this->assertNull($inscricao->justificativa_reprovacao_secretaria);
+    }
+
+    #[Test]
+    public function show_page_displays_secretaria_rejection_justification(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => 'Motivo registrado para conferência.',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(route('inscricoes.show', $inscricao))
+            ->assertOk()
+            ->assertSee('Motivo da reprovação')
+            ->assertSee('Motivo registrado para conferência.');
+    }
+
+    #[Test]
+    public function reject_justification_must_not_exceed_max_length(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($secretario)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => str_repeat('a', 5001),
+            ])
+            ->assertSessionHasErrors('justificativa');
+
+        $inscricao->refresh();
+        $this->assertNotSame(InscricaoStatus::ReprovadoSecretaria, $inscricao->status);
+        $this->assertNull($inscricao->justificativa_reprovacao_secretaria);
+    }
+
+    #[Test]
+    public function show_page_offers_edit_rejection_button_after_rejection(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('Admin');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($admin)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => 'Motivo inicial.',
+            ]);
+
+        $this->actingAs($admin)
+            ->get(route('inscricoes.show', $inscricao))
+            ->assertOk()
+            ->assertSee('Editar reprovação')
+            ->assertSee('Salvar justificativa')
+            ->assertSee('Motivo inicial.')
+            ->assertDontSee('Reprovar inscrição');
+    }
+
+    #[Test]
+    public function secretario_can_update_rejection_justification(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($secretario)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => 'Motivo inicial.',
+            ]);
+
+        $this->actingAs($secretario)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => 'Motivo revisado.',
+            ])
+            ->assertRedirect(route('inscricoes.show', $inscricao))
+            ->assertSessionHas('success', 'Reprovação atualizada pela secretaria.');
+
+        $inscricao->refresh();
+        $this->assertSame('Motivo revisado.', $inscricao->justificativa_reprovacao_secretaria);
+        $this->assertSame(AprovacaoSecretariaDisciplina::Reprovado, $inscricao->aprovacao_obrigatoria_secretaria);
+        $this->assertSame(InscricaoStatus::ReprovadoSecretaria, $inscricao->status);
+    }
+
+    #[Test]
+    public function secretario_can_clear_rejection_justification_when_editing(): void
+    {
+        $secretario = User::factory()->create();
+        $secretario->assignRole('Secretario');
+
+        $inscricao = Inscricao::factory()
+            ->concluida()
+            ->comTresDisciplinas()
+            ->create();
+
+        $this->actingAs($secretario)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => 'Motivo inicial.',
+            ]);
+
+        $this->actingAs($secretario)
+            ->post(route('inscricoes.reprovar-secretaria', $inscricao), [
+                'justificativa' => '',
+            ])
+            ->assertRedirect(route('inscricoes.show', $inscricao))
+            ->assertSessionHas('success', 'Reprovação atualizada pela secretaria.');
+
+        $inscricao->refresh();
+        $this->assertNull($inscricao->justificativa_reprovacao_secretaria);
+        $this->assertSame(InscricaoStatus::ReprovadoSecretaria, $inscricao->status);
+    }
 }

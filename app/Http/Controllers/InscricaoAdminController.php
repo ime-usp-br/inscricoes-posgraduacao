@@ -7,6 +7,7 @@ use App\Enums\ResumoAprovacaoInscricao;
 use App\Http\Controllers\Concerns\DownloadsInscricaoPdf;
 use App\Http\Requests\AprovarDisciplinaSecretariaRequest;
 use App\Http\Requests\AprovarInscricoesEmBlocoSecretariaRequest;
+use App\Http\Requests\ReprovarInscricaoSecretariaRequest;
 use App\Models\DisciplinaOfertada;
 use App\Models\Inscricao;
 use App\Models\Periodo;
@@ -25,7 +26,6 @@ class InscricaoAdminController extends Controller
     public function index(Request $request): View
     {
         $search = trim($request->string('q')->toString());
-        $periodoId = $request->integer('periodo_id');
         $disciplinaId = $request->integer('disciplina_id');
         $filtroAprovacao = $request->string('aprovacao')->toString();
         $filtroPagamento = match ($request->string('pagamento')->toString()) {
@@ -33,6 +33,9 @@ class InscricaoAdminController extends Controller
             'pago', 'nao_aplicavel' => 'demais',
             default => $request->string('pagamento')->toString(),
         };
+
+        $periodoAtivo = Periodo::ativoParaInscricoes();
+        $periodoId = $request->integer('periodo_id', $periodoAtivo->id ?? 0);
 
         $query = Inscricao::query()
             ->with(['periodo', 'disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2'])
@@ -246,6 +249,20 @@ class InscricaoAdminController extends Controller
 
         $slot = $request->string('disciplina')->toString();
 
+        if ($slot === '') {
+            if ($inscricao->resumoAprovacaoSecretaria() === ResumoAprovacaoInscricao::Aprovada) {
+                return redirect()
+                    ->route('inscricoes.show', $inscricao)
+                    ->with('info', 'Esta inscrição já está aprovada pela secretaria.');
+            }
+
+            $inscricao->aprovarPelaSecretaria();
+
+            return redirect()
+                ->route('inscricoes.show', $inscricao)
+                ->with('success', 'Inscrição aprovada pela secretaria.');
+        }
+
         $disciplinaId = match ($slot) {
             'obrigatoria' => $inscricao->disciplina_obrigatoria_id,
             'opcional_1' => $inscricao->disciplina_opcional_1_id,
@@ -286,7 +303,7 @@ class InscricaoAdminController extends Controller
     }
 
     public function reprovarDisciplinaSecretaria(
-        AprovarDisciplinaSecretariaRequest $request,
+        ReprovarInscricaoSecretariaRequest $request,
         Inscricao $inscricao,
     ): RedirectResponse {
         if ($inscricao->etapa_concluida < 3) {
@@ -296,6 +313,19 @@ class InscricaoAdminController extends Controller
         }
 
         $slot = $request->string('disciplina')->toString();
+        $justificativa = $request->string('justificativa')->toString();
+
+        if ($slot === '') {
+            $jaReprovada = $inscricao->resumoAprovacaoSecretaria() === ResumoAprovacaoInscricao::Reprovada;
+
+            $inscricao->reprovarPelaSecretaria($justificativa);
+
+            return redirect()
+                ->route('inscricoes.show', $inscricao)
+                ->with('success', $jaReprovada
+                    ? 'Reprovação atualizada pela secretaria.'
+                    : 'Inscrição reprovada pela secretaria.');
+        }
 
         $disciplinaId = match ($slot) {
             'obrigatoria' => $inscricao->disciplina_obrigatoria_id,
@@ -316,7 +346,7 @@ class InscricaoAdminController extends Controller
                 ->with('info', 'Esta disciplina já está reprovada pela secretaria.');
         }
 
-        $inscricao->marcarDisciplinaReprovadaPelaSecretaria($slot);
+        $inscricao->marcarDisciplinaReprovadaPelaSecretaria($slot, $justificativa);
 
         $inscricao->load([
             'disciplinaObrigatoria',

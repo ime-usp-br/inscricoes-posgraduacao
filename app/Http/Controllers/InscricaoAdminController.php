@@ -7,6 +7,7 @@ use App\Enums\ResumoAprovacaoInscricao;
 use App\Http\Controllers\Concerns\DownloadsInscricaoPdf;
 use App\Http\Requests\AprovarDisciplinaSecretariaRequest;
 use App\Http\Requests\AprovarInscricoesEmBlocoSecretariaRequest;
+use App\Http\Requests\ReprovarInscricaoSecretariaRequest;
 use App\Models\DisciplinaOfertada;
 use App\Models\Inscricao;
 use App\Models\Periodo;
@@ -302,7 +303,7 @@ class InscricaoAdminController extends Controller
     }
 
     public function reprovarDisciplinaSecretaria(
-        AprovarDisciplinaSecretariaRequest $request,
+        ReprovarInscricaoSecretariaRequest $request,
         Inscricao $inscricao,
     ): RedirectResponse {
         if ($inscricao->etapa_concluida < 3) {
@@ -312,19 +313,18 @@ class InscricaoAdminController extends Controller
         }
 
         $slot = $request->string('disciplina')->toString();
+        $justificativa = $request->string('justificativa')->toString();
 
         if ($slot === '') {
-            if ($inscricao->resumoAprovacaoSecretaria() === ResumoAprovacaoInscricao::Reprovada) {
-                return redirect()
-                    ->route('inscricoes.show', $inscricao)
-                    ->with('info', 'Esta inscrição já está reprovada pela secretaria.');
-            }
+            $jaReprovada = $inscricao->resumoAprovacaoSecretaria() === ResumoAprovacaoInscricao::Reprovada;
 
-            $inscricao->reprovarPelaSecretaria();
+            $inscricao->reprovarPelaSecretaria($justificativa);
 
             return redirect()
                 ->route('inscricoes.show', $inscricao)
-                ->with('success', 'Inscrição reprovada pela secretaria.');
+                ->with('success', $jaReprovada
+                    ? 'Reprovação atualizada pela secretaria.'
+                    : 'Inscrição reprovada pela secretaria.');
         }
 
         $disciplinaId = match ($slot) {
@@ -346,7 +346,7 @@ class InscricaoAdminController extends Controller
                 ->with('info', 'Esta disciplina já está reprovada pela secretaria.');
         }
 
-        $inscricao->marcarDisciplinaReprovadaPelaSecretaria($slot);
+        $inscricao->marcarDisciplinaReprovadaPelaSecretaria($slot, $justificativa);
 
         $inscricao->load([
             'disciplinaObrigatoria',

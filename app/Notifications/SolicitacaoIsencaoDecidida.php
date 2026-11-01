@@ -16,9 +16,7 @@ class SolicitacaoIsencaoDecidida extends Notification implements ShouldQueue
 
     public function __construct(
         private readonly SolicitacaoIsencao $solicitacao,
-    ) {
-        $this->initEmailLogging();
-    }
+    ) {}
 
     /**
      * @return list<string>

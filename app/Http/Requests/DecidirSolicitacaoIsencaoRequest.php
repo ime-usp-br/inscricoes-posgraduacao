@@ -5,6 +5,9 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * @method array<string, mixed> validated($key = null, $default = null)
+ */
 class DecidirSolicitacaoIsencaoRequest extends FormRequest
 {
     public function authorize(): bool
@@ -12,6 +15,9 @@ class DecidirSolicitacaoIsencaoRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [

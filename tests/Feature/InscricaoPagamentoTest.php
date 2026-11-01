@@ -53,7 +53,15 @@ class InscricaoPagamentoTest extends TestCase
         $this->withSession(['inscricao_id' => $inscricao->id])
             ->get(route('inscricao.pagamento'))
             ->assertOk()
-            ->assertSee('R$ 107,00');
+            ->assertSee('R$ 107,00')
+            ->assertSee('Gerar cobrança Pix');
+
+        $inscricao->refresh();
+        $this->assertNull($inscricao->pix_idfpix);
+
+        $this->withSession(['inscricao_id' => $inscricao->id])
+            ->post(route('inscricao.pagamento.gerar'))
+            ->assertRedirect(route('inscricao.pagamento'));
 
         $inscricao->refresh();
         $this->assertSame('PIX-TEST-001', $inscricao->pix_idfpix);
@@ -96,7 +104,15 @@ class InscricaoPagamentoTest extends TestCase
             ->assertSee('R$ 214,00')
             ->assertSee('MAC1001')
             ->assertSee('MAE0050')
-            ->assertSee('Total a pagar (pagamento único)');
+            ->assertSee('Total a pagar (pagamento único)')
+            ->assertSee('Gerar cobrança Pix');
+
+        $inscricao->refresh();
+        $this->assertNull($inscricao->pix_idfpix);
+
+        $this->withSession(['inscricao_id' => $inscricao->id])
+            ->post(route('inscricao.pagamento.gerar'))
+            ->assertRedirect(route('inscricao.pagamento'));
 
         $inscricao->refresh();
         $this->assertSame(214.0, (float) $inscricao->pix_valor);
@@ -125,28 +141,10 @@ class InscricaoPagamentoTest extends TestCase
             'pix_quantidade_disciplinas' => 1,
         ]);
 
-        Http::fake(function ($request) {
-            $url = $request->url();
+        $response = $this->withSession(['inscricao_id' => $inscricao->id])
+            ->post(route('inscricao.pagamento.verificar'));
 
-            if (str_contains($url, '/pix/gerar')) {
-                return Http::response([
-                    'idfpix' => 'PIX-TEST-001',
-                    'qrCode' => '000201',
-                    'qrCodeImgBase64' => base64_encode('qr'),
-                ]);
-            }
-
-            return Http::response([
-                'idfpix' => 'PIX-TEST-001',
-                'status' => 'Concluído',
-                'dataPag' => now()->format('d/m/Y H:i:s'),
-                'qrCode' => '000201',
-            ]);
-        });
-
-        $this->withSession(['inscricao_id' => $inscricao->id])
-            ->post(route('inscricao.pagamento.verificar'))
-            ->assertRedirect(route('home'));
+        $response->assertRedirect(route('home'));
 
         $inscricao->refresh();
         $this->assertSame(PagamentoDisciplinaStatus::Pago->value, $inscricao->pagamentos_disciplinas['obrigatoria']);
@@ -274,8 +272,8 @@ class InscricaoPagamentoTest extends TestCase
         ]);
 
         $this->withSession(['inscricao_id' => $inscricao->id])
-            ->get(route('inscricao.pagamento'))
-            ->assertOk();
+            ->post(route('inscricao.pagamento.gerar'))
+            ->assertRedirect(route('inscricao.pagamento'));
 
         Http::assertSent(function ($request): bool {
             if (! str_contains($request->url(), '/pix/gerar')) {
@@ -380,6 +378,15 @@ class InscricaoPagamentoTest extends TestCase
                     'idfpix' => 'PIX-TEST-001',
                     'qrCode' => '00020126580014BR.GOV.BCB.PIX',
                     'qrCodeImgBase64' => base64_encode('fake-qr-image'),
+                ]);
+            }
+
+            if (str_contains($url, 'verificar=1')) {
+                return Http::response([
+                    'idfpix' => 'PIX-TEST-001',
+                    'status' => 'Concluído',
+                    'dataPag' => now()->format('d/m/Y H:i:s'),
+                    'qrCode' => '00020126580014BR.GOV.BCB.PIX',
                 ]);
             }
 

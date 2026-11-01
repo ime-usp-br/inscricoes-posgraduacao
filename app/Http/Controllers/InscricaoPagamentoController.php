@@ -25,7 +25,7 @@ class InscricaoPagamentoController extends Controller
             return redirect()->route('home')->withErrors(['sessao' => 'Sessão inválida ou inscrição incompleta.']);
         }
 
-        if (! $inscricao->temPagamentoPendente()) {
+        if (! $inscricao->temPagamentoPendente() && ! $inscricao->temIsencaoPendente()) {
             return redirect()->route('home')->with('success', 'Pagamento já confirmado.');
         }
 
@@ -37,15 +37,17 @@ class InscricaoPagamentoController extends Controller
         $pixDados = null;
         $erroPix = null;
 
-        try {
-            $pixDados = $pagamentoService->garantirPixAtivo($inscricao);
-            $inscricao->refresh();
+        if ($inscricao->possuiPixGerado()) {
+            try {
+                $pixDados = $pagamentoService->pixAtual($inscricao);
+                $inscricao->refresh();
 
-            if (! $inscricao->temPagamentoPendente()) {
-                return redirect()->route('home')->with('success', 'Pagamento confirmado com sucesso.');
+                if (! $inscricao->temPagamentoPendente()) {
+                    return redirect()->route('home')->with('success', 'Pagamento confirmado com sucesso.');
+                }
+            } catch (Throwable $exception) {
+                $erroPix = $exception->getMessage();
             }
-        } catch (Throwable $exception) {
-            $erroPix = $exception->getMessage();
         }
 
         return view('inscricao.pagamento', [
@@ -57,7 +59,35 @@ class InscricaoPagamentoController extends Controller
             'quantidade' => $quantidade,
             'pixDados' => $pixDados,
             'erroPix' => $erroPix,
+            'podeSolicitarIsencao' => $inscricao->podeSolicitarIsencao(),
+            'temIsencaoPendente' => $inscricao->temIsencaoPendente(),
+            'solicitacaoIsencao' => $inscricao->solicitacaoIsencao,
         ]);
+    }
+
+    public function gerar(InscricaoPagamentoService $pagamentoService): RedirectResponse
+    {
+        $periodoAtivo = Periodo::ativoParaInscricoes();
+        if ($periodoAtivo === null) {
+            return redirect()->route('home')->withErrors(['periodo' => 'Não há período de inscrições ativo.']);
+        }
+
+        $inscricao = $this->inscricaoAtualNaSessao($periodoAtivo->id);
+        if ($inscricao === null || $inscricao->etapa_concluida < 3) {
+            return redirect()->route('home')->withErrors(['sessao' => 'Sessão inválida ou inscrição incompleta.']);
+        }
+
+        try {
+            $pagamentoService->gerarPix($inscricao);
+        } catch (Throwable $exception) {
+            return redirect()
+                ->route('inscricao.pagamento')
+                ->withErrors(['pix' => $exception->getMessage()]);
+        }
+
+        return redirect()
+            ->route('inscricao.pagamento')
+            ->with('success', 'Cobrança Pix gerada com sucesso.');
     }
 
     public function verificar(Request $request, InscricaoPagamentoService $pagamentoService): RedirectResponse

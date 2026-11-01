@@ -7,13 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notifiable;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 class SolicitacaoIsencao extends Model implements Auditable
 {
     /** @use HasFactory<\Database\Factories\SolicitacaoIsencaoFactory> */
-    use AuditableTrait, HasFactory;
+    use AuditableTrait, HasFactory, Notifiable;
 
     protected $table = 'solicitacoes_isencao';
 
@@ -59,6 +60,11 @@ class SolicitacaoIsencao extends Model implements Auditable
     public function decididaPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'decidida_por');
+    }
+
+    public function routeNotificationForMail(object $notification): ?string
+    {
+        return $this->inscricao?->email;
     }
 
     /**

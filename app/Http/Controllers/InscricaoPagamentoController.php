@@ -65,9 +65,63 @@ class InscricaoPagamentoController extends Controller
         ]);
     }
 
+    /**
+     * Acesso ao pagamento via link assinado (válido por 30 dias após o prazo).
+     */
+    public function showAssinada(Inscricao $inscricao, InscricaoPagamentoService $pagamentoService): View|RedirectResponse
+    {
+        $periodo = $inscricao->periodo;
+
+        if ($periodo === null || ! $inscricao->etapa_concluida >= 3) {
+            abort(403);
+        }
+
+        if (! $inscricao->temPagamentoPendente()) {
+            return redirect()->route('home')->with('success', 'Pagamento já confirmado.');
+        }
+
+        if ($inscricao->temIsencaoPendente()) {
+            return redirect()->route('inscricao.isencao.show')->withErrors(['isencao' => 'Solicitação de isenção em análise.']);
+        }
+
+        $disciplinasPendentes = $inscricao->disciplinasComPagamentoPendente();
+        $valorTotal = $pagamentoService->valorTotal($inscricao);
+        $quantidade = $pagamentoService->quantidadeDisciplinasComPagamento($inscricao);
+        $valorUnitario = $pagamentoService->valorPorDisciplina();
+
+        $pixDados = null;
+        $erroPix = null;
+
+        if ($inscricao->possuiPixGerado()) {
+            try {
+                $pixDados = $pagamentoService->pixAtual($inscricao);
+                $inscricao->refresh();
+
+                if (! $inscricao->temPagamentoPendente()) {
+                    return redirect()->route('home')->with('success', 'Pagamento confirmado com sucesso.');
+                }
+            } catch (Throwable $exception) {
+                $erroPix = $exception->getMessage();
+            }
+        }
+
+        return view('inscricao.pagamento', [
+            'periodo' => $periodo,
+            'inscricao' => $inscricao,
+            'disciplinasPendentes' => $disciplinasPendentes,
+            'valorUnitario' => $valorUnitario,
+            'valorTotal' => $valorTotal,
+            'quantidade' => $quantidade,
+            'pixDados' => $pixDados,
+            'erroPix' => $erroPix,
+            'podeSolicitarIsencao' => $inscricao->podeSolicitarIsencao(),
+            'temIsencaoPendente' => $inscricao->temIsencaoPendente(),
+            'solicitacaoIsencao' => $inscricao->solicitacaoIsencao,
+        ]);
+    }
+
     public function gerar(InscricaoPagamentoService $pagamentoService): RedirectResponse
     {
-        $periodoAtivo = Periodo::ativoParaInscricoes();
         if ($periodoAtivo === null) {
             return redirect()->route('home')->withErrors(['periodo' => 'Não há período de inscrições ativo.']);
         }

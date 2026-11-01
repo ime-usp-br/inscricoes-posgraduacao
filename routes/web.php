@@ -17,6 +17,9 @@ Route::post('/inscricao/etapa-2', [InscricaoController::class, 'storeEtapa2'])->
 Route::post('/inscricao/etapa-3', [InscricaoController::class, 'storeEtapa3'])->name('inscricao.etapa3');
 Route::post('/inscricao/reiniciar', [InscricaoController::class, 'reiniciar'])->name('inscricao.reiniciar');
 Route::get('/inscricao/pagamento', [InscricaoPagamentoController::class, 'show'])->name('inscricao.pagamento');
+Route::get('/inscricao/pagamento/assinada/{inscricao}', [InscricaoPagamentoController::class, 'showAssinada'])
+    ->middleware('signed')
+    ->name('inscricao.pagamento.assinada');
 Route::post('/inscricao/pagamento/gerar', [InscricaoPagamentoController::class, 'gerar'])->name('inscricao.pagamento.gerar');
 Route::post('/inscricao/pagamento/verificar', [InscricaoPagamentoController::class, 'verificar'])->name('inscricao.pagamento.verificar');
 Route::get('/inscricao/isencao', [SolicitacaoIsencaoController::class, 'show'])->name('inscricao.isencao.show');

@@ -1180,6 +1180,14 @@ class Inscricao extends Model
             return true;
         }
 
+        if ($this->temIsencaoPendente()) {
+            return false;
+        }
+
+        if ($this->temSolicitacaoIsencaoDecidida() && $this->prazoPagamentoExpirado()) {
+            return false;
+        }
+
         if ($this->pix_status === 'Expirado') {
             return true;
         }

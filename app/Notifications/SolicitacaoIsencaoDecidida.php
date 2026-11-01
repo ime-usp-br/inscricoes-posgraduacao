@@ -8,7 +8,7 @@ use App\Notifications\Concerns\WithEmailLogging;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\URL;
 
 class SolicitacaoIsencaoDecidida extends Notification implements ShouldQueue
 {
@@ -51,7 +51,16 @@ class SolicitacaoIsencaoDecidida extends Notification implements ShouldQueue
 
         if ($aprovada) {
             $message->line('Sua solicitação de isenção foi aprovada pela secretaria.')
-                ->line('As disciplinas solicitadas estão isentas da taxa de inscrição.');
+                ->line('As disciplinas solicitadas estão isentas da taxa de inscrição.')
+                ->line('Você tem '.((int) config('isencao.prazo_pagamento_dias', 5)).' dias corridos para gerar o Pix e efetuar o pagamento.');
+
+            try {
+                $expira = $inscricao?->prazoPagamento() ?? now()->addDays(30);
+                $urlAssinada = URL::temporarySignedRoute('inscricao.pagamento.assinada', $expira, ['inscricao' => $inscricao?->id]);
+                $message->action('Pagar via link assinado', $urlAssinada);
+            } catch (\Throwable) {
+                $message->action('Acessar página de pagamento', route('inscricao.pagamento'));
+            }
         } else {
             $message->line('Sua solicitação de isenção foi reprovada pela secretaria.');
             if ($this->solicitacao->motivo_reprovacao) {

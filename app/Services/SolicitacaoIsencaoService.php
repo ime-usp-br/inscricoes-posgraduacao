@@ -7,9 +7,13 @@ use App\Enums\SolicitacaoIsencaoStatus;
 use App\Models\Inscricao;
 use App\Models\SolicitacaoIsencao;
 use App\Models\User;
+use App\Notifications\SolicitacaoIsencaoDecidida;
+use App\Notifications\SolicitacaoIsencaoEnviada;
+use App\Notifications\SolicitacaoIsencaoRecebida;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -79,6 +83,14 @@ class SolicitacaoIsencaoService
             $inscricao->limparPix();
             $inscricao->save();
             $inscricao->setRelation('solicitacaoIsencao', $solicitacao);
+
+            try {
+                $adminsSecretarios = User::query()->role(['Admin', 'Secretario'])->get();
+                Notification::send($solicitacao, new SolicitacaoIsencaoEnviada($solicitacao));
+                Notification::send($adminsSecretarios, new SolicitacaoIsencaoRecebida($solicitacao));
+            } catch (\Throwable) {
+                // best-effort
+            }
 
             return $this->fresca($solicitacao, ['documentos', 'inscricao']);
         });
@@ -205,6 +217,13 @@ class SolicitacaoIsencaoService
 
             $inscricao->save();
             $inscricao->setRelation('solicitacaoIsencao', $solicitacao);
+
+            $solicitacao->loadMissing('inscricao');
+            try {
+                Notification::send($solicitacao, new SolicitacaoIsencaoDecidida($solicitacao));
+            } catch (\Throwable) {
+                // best-effort
+            }
 
             return $this->fresca($solicitacao, ['documentos', 'inscricao', 'decididaPor']);
         });
@@ -490,6 +509,13 @@ class SolicitacaoIsencaoService
         }
 
         $inscricao->pagamentos_disciplinas = $pagamentos;
+    }
+
+    public function agendarLembreteInterno(SolicitacaoIsencao $solicitacao, CarbonInterface $prazo): void
+    {
+        $this->agendarLembrete($solicitacao, $prazo);
+        $solicitacao->lembrete_enviado_em = null;
+        $solicitacao->save();
     }
 
     private function agendarLembrete(SolicitacaoIsencao $solicitacao, CarbonInterface $prazo): void

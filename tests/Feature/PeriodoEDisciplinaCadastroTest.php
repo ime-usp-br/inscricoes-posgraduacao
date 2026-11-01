@@ -103,7 +103,7 @@ class PeriodoEDisciplinaCadastroTest extends TestCase
             ->assertOk()
             ->assertSee('MAC0201')
             ->assertSee('MAE0050')
-            ->assertSee('2 disciplina(s) serão cadastradas');
+            ->assertSeeText('2 disciplina(s) serão cadastradas');
     }
 
     #[Test]

@@ -21,23 +21,12 @@
                     </p>
 
                     <form method="GET" action="{{ route('professor.inscricoes.index') }}" class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                        <div class="md:col-span-4">
+                        <div class="md:col-span-6">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Busca por nome</label>
                             <input type="search" name="q" value="{{ $search }}" placeholder="Nome completo..."
                                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                         </div>
-                        <div class="md:col-span-3">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Período</label>
-                            <select name="periodo_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm">
-                                <option value="">Todos</option>
-                                @foreach ($periodos as $p)
-                                    <option value="{{ $p->id }}" @selected((int) $periodoId === (int) $p->id)>
-                                        {{ $p->ano }}/{{ $p->semestre }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="md:col-span-3">
+                        <div class="md:col-span-4">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Disciplina</label>
                             <select name="disciplina_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm">
                                 <option value="">Todas</option>
@@ -65,7 +54,6 @@
                                     @if ($mostrarColunaSecretaria)
                                         <th class="px-4 py-3 font-semibold">Secretaria</th>
                                     @endif
-                                    <th class="px-4 py-3 font-semibold">Professor</th>
                                     <th class="px-4 py-3 font-semibold">Disciplina(s)</th>
                                     <th class="px-4 py-3 font-semibold">Período</th>
                                 </tr>
@@ -86,23 +74,43 @@
                                                 <x-inscricao-resumo-etapa-badge :resumo="$i->resumoAprovacaoSecretaria()" etapa="secretaria" />
                                             </td>
                                         @endif
-                                        <td class="px-4 py-4">
-                                            <x-inscricao-resumo-etapa-badge :resumo="$i->resumoAprovacaoProfessor()" etapa="professor" />
-                                        </td>
                                         <td class="px-4 py-4 text-gray-800 dark:text-gray-200">
                                             @php
-                                                $codigos = [];
-                                                if ($i->disciplinaObrigatoria) {
-                                                    $codigos[] = $i->disciplinaObrigatoria->codigo_completo;
-                                                }
-                                                if ($i->disciplinaOpcional1) {
-                                                    $codigos[] = $i->disciplinaOpcional1->codigo_completo;
-                                                }
-                                                if ($i->disciplinaOpcional2) {
-                                                    $codigos[] = $i->disciplinaOpcional2->codigo_completo;
+                                                $disciplinasBadge = [];
+                                                foreach ($i->disciplinasParaAprovacaoProfessorDe(auth()->user()) as $item) {
+                                                    $disciplina = $item['disciplina'];
+                                                    $campoProfessor = match ($item['slot']) {
+                                                        'obrigatoria' => 'aprovacao_obrigatoria_professor',
+                                                        'opcional_1' => 'aprovacao_opcional_1_professor',
+                                                        'opcional_2' => 'aprovacao_opcional_2_professor',
+                                                        default => $item['aprovacao'],
+                                                    };
+                                                    $aprovacao = $i->{$campoProfessor};
+
+                                                    $status = match (true) {
+                                                        $aprovacao === \App\Enums\AprovacaoProfessorDisciplina::Aprovado => 'aprovado',
+                                                        $aprovacao === \App\Enums\AprovacaoProfessorDisciplina::Reprovado => 'reprovado',
+                                                        default => 'pendente',
+                                                    };
+
+                                                    $disciplinasBadge[] = [
+                                                        'codigo' => $disciplina->codigo_completo,
+                                                        'status' => $status,
+                                                    ];
                                                 }
                                             @endphp
-                                            {{ count($codigos) ? implode(', ', $codigos) : '—' }}
+                                            @if (count($disciplinasBadge))
+                                                <div class="flex flex-wrap gap-1.5">
+                                                    @foreach ($disciplinasBadge as $item)
+                                                        <x-inscricao-disciplina-badge
+                                                            :codigo="$item['codigo']"
+                                                            :status="$item['status']"
+                                                        />
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                —
+                                            @endif
                                         </td>
                                         <td class="px-4 py-4 rounded-r-lg">
                                             @if ($i->periodo)
@@ -114,7 +122,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="{{ $mostrarColunaSecretaria ? 5 : 4 }}" class="px-4 py-8 text-center text-gray-600 dark:text-gray-400">
+                                        <td colspan="{{ $mostrarColunaSecretaria ? 4 : 3 }}" class="px-4 py-8 text-center text-gray-600 dark:text-gray-400">
                                             Nenhuma inscrição disponível para avaliação do professor.
                                         </td>
                                     </tr>

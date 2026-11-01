@@ -135,7 +135,6 @@
                                     <th class="px-4 py-3 font-semibold">Nome</th>
                                     <th class="px-4 py-3 font-semibold">Pagamento</th>
                                     <th class="px-4 py-3 font-semibold">Secretaria</th>
-                                    <th class="px-4 py-3 font-semibold">Professor</th>
                                     <th class="px-4 py-3 font-semibold">Disciplina(s)</th>
                                     <th class="px-4 py-3 font-semibold">Período</th>
                                 </tr>
@@ -168,23 +167,42 @@
                                         <td class="px-4 py-4">
                                             <x-inscricao-resumo-etapa-badge :resumo="$i->resumoAprovacaoSecretaria()" etapa="secretaria" />
                                         </td>
-                                        <td class="px-4 py-4">
-                                            <x-inscricao-resumo-etapa-badge :resumo="$i->resumoAprovacaoProfessor()" etapa="professor" />
-                                        </td>
                                         <td class="px-4 py-4 text-gray-800 dark:text-gray-200">
                                             @php
-                                                $codigos = [];
-                                                if ($i->disciplinaObrigatoria) {
-                                                    $codigos[] = $i->disciplinaObrigatoria->codigo_completo;
-                                                }
-                                                if ($i->disciplinaOpcional1) {
-                                                    $codigos[] = $i->disciplinaOpcional1->codigo_completo;
-                                                }
-                                                if ($i->disciplinaOpcional2) {
-                                                    $codigos[] = $i->disciplinaOpcional2->codigo_completo;
+                                                $disciplinasBadge = [];
+                                                foreach ([
+                                                    ['disciplina' => $i->disciplinaObrigatoria, 'status' => $i->aprovacao_obrigatoria_professor],
+                                                    ['disciplina' => $i->disciplinaOpcional1, 'status' => $i->aprovacao_opcional_1_professor],
+                                                    ['disciplina' => $i->disciplinaOpcional2, 'status' => $i->aprovacao_opcional_2_professor],
+                                                ] as $item) {
+                                                    if ($item['disciplina'] === null) {
+                                                        continue;
+                                                    }
+
+                                                    $status = match (true) {
+                                                        $item['status'] === \App\Enums\AprovacaoProfessorDisciplina::Aprovado => 'aprovado',
+                                                        $item['status'] === \App\Enums\AprovacaoProfessorDisciplina::Reprovado => 'reprovado',
+                                                        default => 'pendente',
+                                                    };
+
+                                                    $disciplinasBadge[] = [
+                                                        'codigo' => $item['disciplina']->codigo_completo,
+                                                        'status' => $status,
+                                                    ];
                                                 }
                                             @endphp
-                                            {{ count($codigos) ? implode(', ', $codigos) : '—' }}
+                                            @if (count($disciplinasBadge))
+                                                <div class="flex flex-wrap gap-1.5">
+                                                    @foreach ($disciplinasBadge as $item)
+                                                        <x-inscricao-disciplina-badge
+                                                            :codigo="$item['codigo']"
+                                                            :status="$item['status']"
+                                                        />
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                —
+                                            @endif
                                         </td>
                                         <td class="px-4 py-4 rounded-r-lg">
                                             @if ($i->periodo)
@@ -196,7 +214,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="px-4 py-8 text-center text-gray-600 dark:text-gray-400">
+                                        <td colspan="6" class="px-4 py-8 text-center text-gray-600 dark:text-gray-400">
                                             Nenhuma inscrição encontrada.
                                         </td>
                                     </tr>

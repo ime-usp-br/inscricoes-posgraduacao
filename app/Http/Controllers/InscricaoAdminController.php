@@ -192,8 +192,15 @@ class InscricaoAdminController extends Controller
         $inscricoesAtualizadas = 0;
         $disciplinasAprovadas = 0;
         $semAlteracao = 0;
+        $bloqueadasPorPagamento = 0;
 
         foreach ($inscricoes as $inscricao) {
+            if ($inscricao->temPagamentoEmAberto()) {
+                $bloqueadasPorPagamento++;
+
+                continue;
+            }
+
             $aprovadas = $inscricao->aprovarTodasDisciplinasPelaSecretaria();
 
             if ($aprovadas > 0) {
@@ -214,8 +221,12 @@ class InscricaoAdminController extends Controller
         ]));
 
         if ($inscricoesAtualizadas === 0) {
+            $mensagemErro = $bloqueadasPorPagamento > 0
+                ? 'Nenhuma inscrição foi aprovada: há pagamento ou isenção pendente.'
+                : 'Nenhuma disciplina pendente foi aprovada nas inscrições selecionadas.';
+
             return $redirect->withErrors([
-                'aprovacao' => 'Nenhuma disciplina pendente foi aprovada nas inscrições selecionadas.',
+                'aprovacao' => $mensagemErro,
             ]);
         }
 
@@ -227,6 +238,10 @@ class InscricaoAdminController extends Controller
 
         if ($semAlteracao > 0) {
             $mensagem .= " {$semAlteracao} inscrição(ões) selecionada(s) já estavam totalmente aprovadas.";
+        }
+
+        if ($bloqueadasPorPagamento > 0) {
+            $mensagem .= " {$bloqueadasPorPagamento} inscrição(ões) ignorada(s) por pagamento ou isenção pendente.";
         }
 
         $idsNaoEncontrados = count($ids) - $inscricoes->count();
@@ -245,6 +260,12 @@ class InscricaoAdminController extends Controller
             return redirect()
                 ->route('inscricoes.show', $inscricao)
                 ->withErrors(['aprovacao' => 'A inscrição ainda não foi concluída pelo candidato.']);
+        }
+
+        if ($inscricao->temPagamentoEmAberto()) {
+            return redirect()
+                ->route('inscricoes.show', $inscricao)
+                ->withErrors(['aprovacao' => 'Não é possível aprovar a inscrição enquanto houver pagamento ou isenção pendente.']);
         }
 
         $slot = $request->string('disciplina')->toString();

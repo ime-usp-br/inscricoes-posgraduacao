@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('isencao:enviar-lembretes')->hourly();
+Schedule::command('professor:enviar-lembretes-aprovacao')->dailyAt('08:00')->timezone('America/Sao_Paulo');

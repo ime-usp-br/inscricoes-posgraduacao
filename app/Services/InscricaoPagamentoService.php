@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\WspixClient;
+use App\Enums\SolicitacaoIsencaoStatus;
 use App\Models\Inscricao;
 use App\Models\Periodo;
 use Illuminate\Support\Carbon;
@@ -13,6 +14,7 @@ class InscricaoPagamentoService
 {
     public function __construct(
         private readonly WspixClient $wspix,
+        private readonly SolicitacaoIsencaoService $isencao,
     ) {}
 
     public function valorPorDisciplina(): float
@@ -40,9 +42,17 @@ class InscricaoPagamentoService
      */
     public function garantirPixAtivo(Inscricao $inscricao): array
     {
+        if ($inscricao->temIsencaoPendente()) {
+            throw new RuntimeException(
+                'O pagamento está indisponível enquanto a solicitação de isenção estiver pendente.'
+            );
+        }
+
         if (! $inscricao->temPagamentoPendente()) {
             throw new RuntimeException('Esta inscrição não possui pagamento pendente.');
         }
+
+        $this->garantirGeracaoDePixPermitida($inscricao);
 
         $quantidade = $this->quantidadeDisciplinasComPagamento($inscricao);
         $valor = $this->valorTotal($inscricao);
@@ -97,7 +107,15 @@ class InscricaoPagamentoService
      */
     public function confirmarPagamento(Inscricao $inscricao, array $dados): void
     {
-        if (! $inscricao->temPagamentoPendente()) {
+        $solicitacao = $inscricao->solicitacaoIsencao;
+
+        $isencaoAtiva = $solicitacao !== null && in_array(
+            $solicitacao->status,
+            [SolicitacaoIsencaoStatus::Pendente, SolicitacaoIsencaoStatus::Aprovada],
+            true
+        );
+
+        if (! $inscricao->temPagamentoEmAberto() && ! $isencaoAtiva) {
             return;
         }
 
@@ -108,6 +126,19 @@ class InscricaoPagamentoService
         $inscricao->pix_status = 'Concluído';
         $inscricao->pix_pago_em = $pagoEm;
         $inscricao->save();
+
+        if ($solicitacao !== null) {
+            $this->isencao->cancelarPorPagamento($solicitacao, $pagoEm);
+        }
+    }
+
+    private function garantirGeracaoDePixPermitida(Inscricao $inscricao): void
+    {
+        if ($inscricao->temSolicitacaoIsencaoDecidida() && $inscricao->prazoPagamentoExpirado()) {
+            throw new RuntimeException(
+                'O prazo para pagamento após a decisão da isenção expirou. Solicite a extensão do prazo à secretaria.'
+            );
+        }
     }
 
     /**

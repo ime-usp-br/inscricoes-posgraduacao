@@ -24,5 +24,25 @@ class DisciplinaOfertadaFactory extends Factory
             'professor_email' => $this->faker->optional()->safeEmail(),
         ];
     }
-}
 
+    public function comPagamento(): static
+    {
+        return $this->state(fn (): array => [
+            'departamento' => 'MAC',
+        ]);
+    }
+
+    public function semPagamento(): static
+    {
+        return $this->state(fn (): array => [
+            'departamento' => 'MAT',
+        ]);
+    }
+
+    public function paraDepartamento(string $departamento): static
+    {
+        return $this->state(fn (): array => [
+            'departamento' => $departamento,
+        ]);
+    }
+}

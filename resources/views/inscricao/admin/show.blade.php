@@ -20,6 +20,8 @@
 
             @include('inscricao._dados-candidato', ['inscricao' => $inscricao])
 
+            @include('inscricao._isencao-secretaria', ['inscricao' => $inscricao])
+
             @include('inscricao._aprovacao-secretaria', ['inscricao' => $inscricao, 'editavel' => true])
 
             @include('inscricao._aprovacao-professor', ['inscricao' => $inscricao, 'editavel' => false])

@@ -72,7 +72,7 @@ class InscricaoPagamentoController extends Controller
     {
         $periodo = $inscricao->periodo;
 
-        if ($periodo === null || ! $inscricao->etapa_concluida >= 3) {
+        if ($periodo === null || $inscricao->etapa_concluida < 3) {
             abort(403);
         }
 
@@ -122,6 +122,7 @@ class InscricaoPagamentoController extends Controller
 
     public function gerar(InscricaoPagamentoService $pagamentoService): RedirectResponse
     {
+        $periodoAtivo = Periodo::ativoParaInscricoes();
         if ($periodoAtivo === null) {
             return redirect()->route('home')->withErrors(['periodo' => 'Não há período de inscrições ativo.']);
         }

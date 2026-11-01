@@ -274,12 +274,16 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
     {
         $admin = User::factory()->create();
         $admin->assignRole('Admin');
+        $periodo = \App\Models\Periodo::factory()->create();
 
         $aprovada = Inscricao::factory()->concluida()->comTresDisciplinas()->create([
+            'periodo_id' => $periodo->id,
             'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
         ]);
 
-        Inscricao::factory()->concluida()->comTresDisciplinas()->create();
+        Inscricao::factory()->concluida()->comTresDisciplinas()->create([
+            'periodo_id' => $periodo->id,
+        ]);
 
         $this->actingAs($admin)
             ->get(route('inscricoes.index', ['aprovacao' => 'secretaria_aprovada']))

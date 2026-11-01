@@ -35,7 +35,10 @@ class InscricaoAdminController extends Controller
         };
 
         $periodoAtivo = Periodo::ativoParaInscricoes();
-        $periodoId = $request->integer('periodo_id', $periodoAtivo->id ?? 0);
+        $periodoId = $request->integer('periodo_id');
+        if (! $request->has('periodo_id') || $periodoId <= 0) {
+            $periodoId = $periodoAtivo->id ?? 0;
+        }
 
         $query = Inscricao::query()
             ->with(['periodo', 'disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2', 'solicitacaoIsencao'])

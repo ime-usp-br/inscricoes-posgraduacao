@@ -8,6 +8,8 @@ use App\Enums\InscricaoStatus;
 use App\Enums\PagamentoDisciplinaStatus;
 use App\Enums\ResumoAprovacaoInscricao;
 use App\Enums\ResumoPagamentoInscricao;
+use App\Enums\SolicitacaoIsencaoStatus;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class Inscricao extends Model
 {
@@ -179,6 +182,10 @@ class Inscricao extends Model
      */
     public function aprovarTodasDisciplinasPelaSecretaria(): int
     {
+        if ($this->temPagamentoEmAberto()) {
+            return 0;
+        }
+
         $aprovadas = 0;
 
         foreach ($this->disciplinasParaAprovacaoSecretaria() as $item) {
@@ -212,6 +219,8 @@ class Inscricao extends Model
      */
     public function aprovarPelaSecretaria(): void
     {
+        $this->garantirPagamentoQuitadoParaAprovacao();
+
         foreach ($this->disciplinasParaAprovacaoSecretaria() as $item) {
             match ($item['slot']) {
                 'obrigatoria' => ($this->aprovacao_obrigatoria_secretaria = AprovacaoSecretariaDisciplina::Aprovado),
@@ -269,6 +278,10 @@ class Inscricao extends Model
 
         if ($field === null) {
             return;
+        }
+
+        if ($aprovacao === AprovacaoSecretariaDisciplina::Aprovado) {
+            $this->garantirPagamentoQuitadoParaAprovacao();
         }
 
         $this->{$field} = $aprovacao;
@@ -686,6 +699,173 @@ class Inscricao extends Model
         return in_array(strtoupper($disciplina->departamento), self::DEPARTAMENTOS_COM_PAGAMENTO, true);
     }
 
+    public function statusPagamentoNoSlot(string $slot): ?PagamentoDisciplinaStatus
+    {
+        if (! is_array($this->pagamentos_disciplinas)) {
+            return null;
+        }
+
+        $status = $this->pagamentos_disciplinas[$slot] ?? null;
+
+        return is_string($status) ? PagamentoDisciplinaStatus::tryFrom($status) : null;
+    }
+
+    /**
+     * Disciplinas com taxa que ainda podem receber uma solicitação de isenção.
+     *
+     * @return list<array{slot: string, disciplina: DisciplinaOfertada, status: PagamentoDisciplinaStatus}>
+     */
+    public function disciplinasElegiveisParaIsencao(): array
+    {
+        if (! $this->isCandidatoSujeitoAPagamento()) {
+            return [];
+        }
+
+        $resultado = [];
+
+        foreach (self::SLOTS_DISCIPLINA as $slot) {
+            $disciplina = $this->disciplinaNoSlot($slot);
+
+            if ($disciplina === null || ! self::departamentoRequerPagamento($disciplina)) {
+                continue;
+            }
+
+            $status = $this->statusPagamentoNoSlot($slot) ?? PagamentoDisciplinaStatus::Pendente;
+
+            if ($status !== PagamentoDisciplinaStatus::Pendente) {
+                continue;
+            }
+
+            $resultado[] = [
+                'slot' => $slot,
+                'disciplina' => $disciplina,
+                'status' => $status,
+            ];
+        }
+
+        return $resultado;
+    }
+
+    public function podeSolicitarIsencao(): bool
+    {
+        if (! config('isencao.habilitado', false)) {
+            return false;
+        }
+
+        if ($this->etapa_concluida < 3) {
+            return false;
+        }
+
+        if ($this->pix_pago_em !== null) {
+            return false;
+        }
+
+        if (! $this->periodo?->inscricoesAbertas()) {
+            return false;
+        }
+
+        $solicitacao = $this->solicitacaoIsencao;
+
+        if (
+            $solicitacao !== null
+            && $solicitacao->status !== SolicitacaoIsencaoStatus::Cancelada
+        ) {
+            return false;
+        }
+
+        return $this->disciplinasElegiveisParaIsencao() !== [];
+    }
+
+    public function temIsencaoPendente(): bool
+    {
+        return $this->solicitacaoIsencao?->status === SolicitacaoIsencaoStatus::Pendente;
+    }
+
+    public function temSolicitacaoIsencaoDecidida(): bool
+    {
+        return in_array(
+            $this->solicitacaoIsencao?->status,
+            [SolicitacaoIsencaoStatus::Aprovada, SolicitacaoIsencaoStatus::Reprovada],
+            true
+        );
+    }
+
+    public function possuiPixGerado(): bool
+    {
+        return $this->pix_idfpix !== null;
+    }
+
+    public function temPixAtivo(): bool
+    {
+        if ($this->pix_idfpix === null) {
+            return false;
+        }
+
+        return ! in_array($this->pix_status, ['Concluído', 'Pago', 'Expirado', 'Cancelado'], true);
+    }
+
+    public function foiAprovada(): bool
+    {
+        return in_array($this->status, [InscricaoStatus::AprovadoSecretaria, InscricaoStatus::AprovadoProfessor], true)
+            || $this->resumoAprovacaoSecretaria() === ResumoAprovacaoInscricao::Aprovada;
+    }
+
+    public function prazoPagamento(): ?CarbonInterface
+    {
+        $prazo = $this->periodo?->data_fim_inscricao?->copy();
+
+        $solicitacao = $this->solicitacaoIsencao;
+
+        if (
+            $solicitacao !== null
+            && in_array(
+                $solicitacao->status,
+                [SolicitacaoIsencaoStatus::Aprovada, SolicitacaoIsencaoStatus::Reprovada],
+                true
+            )
+        ) {
+            $prazoDecisao = $solicitacao->prazo_pagamento_em?->copy();
+
+            if ($prazoDecisao === null && $solicitacao->decidida_em !== null) {
+                $dias = config('isencao.prazo_pagamento_dias', 5);
+                $prazoDecisao = $solicitacao->decidida_em->copy()
+                    ->addDays(is_numeric($dias) ? (int) $dias : 5)
+                    ->endOfDay();
+            }
+
+            if ($prazoDecisao !== null && ($prazo === null || $prazoDecisao->greaterThan($prazo))) {
+                $prazo = $prazoDecisao;
+            }
+        }
+
+        if (
+            $solicitacao?->prazo_pagamento_estendido_em !== null
+            && ($prazo === null || $solicitacao->prazo_pagamento_estendido_em->greaterThan($prazo))
+        ) {
+            $prazo = $solicitacao->prazo_pagamento_estendido_em->copy();
+        }
+
+        return $prazo?->endOfDay();
+    }
+
+    public function prazoPagamentoExpirado(?CarbonInterface $momento = null): bool
+    {
+        $prazo = $this->prazoPagamento();
+
+        return $prazo !== null && ($momento ?? now())->greaterThan($prazo);
+    }
+
+    private function garantirPagamentoQuitadoParaAprovacao(): void
+    {
+        if (! $this->temPagamentoEmAberto()) {
+            return;
+        }
+
+        throw new RuntimeException(
+            'Não é possível aprovar a inscrição enquanto houver pagamento ou isenção pendente.'
+        );
+    }
+
     /**
      * @return array<string, DisciplinaOfertada|null>
      */
@@ -713,6 +893,11 @@ class Inscricao extends Model
 
         $pagamentos = [];
         $existentes = is_array($this->pagamentos_disciplinas) ? $this->pagamentos_disciplinas : [];
+        $statusPreservados = [
+            PagamentoDisciplinaStatus::Pago->value,
+            PagamentoDisciplinaStatus::Isento->value,
+            PagamentoDisciplinaStatus::AguardandoIsencao->value,
+        ];
 
         foreach ($this->disciplinasPorSlot() as $slot => $disciplina) {
             if (! self::departamentoRequerPagamento($disciplina)) {
@@ -720,8 +905,8 @@ class Inscricao extends Model
             }
 
             $statusAtual = $existentes[$slot] ?? PagamentoDisciplinaStatus::Pendente->value;
-            $pagamentos[$slot] = $statusAtual === PagamentoDisciplinaStatus::Pago->value
-                ? PagamentoDisciplinaStatus::Pago->value
+            $pagamentos[$slot] = in_array($statusAtual, $statusPreservados, true)
+                ? $statusAtual
                 : PagamentoDisciplinaStatus::Pendente->value;
         }
 
@@ -734,11 +919,33 @@ class Inscricao extends Model
             return ResumoPagamentoInscricao::NaoAplicavel;
         }
 
-        if ($this->temPagamentoPendente()) {
+        $status = array_values($this->pagamentos_disciplinas);
+
+        if (in_array(PagamentoDisciplinaStatus::AguardandoIsencao->value, $status, true)) {
+            return ResumoPagamentoInscricao::AguardandoIsencao;
+        }
+
+        if (in_array(PagamentoDisciplinaStatus::Pendente->value, $status, true)) {
             return ResumoPagamentoInscricao::NaoPago;
         }
 
-        return ResumoPagamentoInscricao::Pago;
+        $todosIsentos = collect($status)->every(
+            fn (string $item): bool => $item === PagamentoDisciplinaStatus::Isento->value
+        );
+
+        if ($todosIsentos) {
+            return ResumoPagamentoInscricao::Isento;
+        }
+
+        $todosPagos = collect($status)->every(
+            fn (string $item): bool => $item === PagamentoDisciplinaStatus::Pago->value
+        );
+
+        if ($todosPagos) {
+            return ResumoPagamentoInscricao::Pago;
+        }
+
+        return ResumoPagamentoInscricao::PagoOuIsento;
     }
 
     /**
@@ -806,6 +1013,19 @@ class Inscricao extends Model
         }
 
         return in_array(PagamentoDisciplinaStatus::Pendente->value, $this->pagamentos_disciplinas, true);
+    }
+
+    /**
+     * Pagamento ou isenção ainda em aberto: bloqueia aprovação da inscrição.
+     */
+    public function temPagamentoEmAberto(): bool
+    {
+        if (! is_array($this->pagamentos_disciplinas)) {
+            return false;
+        }
+
+        return in_array(PagamentoDisciplinaStatus::Pendente->value, $this->pagamentos_disciplinas, true)
+            || in_array(PagamentoDisciplinaStatus::AguardandoIsencao->value, $this->pagamentos_disciplinas, true);
     }
 
     public function primeiroSlotComPagamentoPendente(): ?string
@@ -982,10 +1202,8 @@ class Inscricao extends Model
         }
 
         $pagamentos = [];
-        foreach ($this->pagamentos_disciplinas as $slot => $status) {
-            $pagamentos[$slot] = $status === PagamentoDisciplinaStatus::Pendente->value
-                ? PagamentoDisciplinaStatus::Pago->value
-                : $status;
+        foreach (array_keys($this->pagamentos_disciplinas) as $slot) {
+            $pagamentos[$slot] = PagamentoDisciplinaStatus::Pago->value;
         }
 
         $this->pagamentos_disciplinas = $pagamentos;

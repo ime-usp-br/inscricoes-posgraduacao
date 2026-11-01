@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -633,6 +634,14 @@ class Inscricao extends Model
     public function periodo(): BelongsTo
     {
         return $this->belongsTo(Periodo::class);
+    }
+
+    /**
+     * @phpstan-return HasOne<SolicitacaoIsencao, $this>
+     */
+    public function solicitacaoIsencao(): HasOne
+    {
+        return $this->hasOne(SolicitacaoIsencao::class);
     }
 
     /**

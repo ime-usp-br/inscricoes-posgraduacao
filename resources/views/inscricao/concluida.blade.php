@@ -59,6 +59,24 @@
                             </div>
                         @endif
                     @endforeach
+
+                    @if ($inscricao->solicitacaoIsencao)
+                        <div class="mt-6 rounded-md bg-gray-50 dark:bg-gray-900/30 p-4 text-sm text-gray-700 dark:text-gray-300">
+                            Solicitação de isenção:
+                            <strong>{{ $inscricao->solicitacaoIsencao->status->label() }}</strong>.
+                            <a href="{{ route('inscricao.isencao.show') }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+                                Ver detalhes
+                            </a>
+                        </div>
+                    @elseif ($inscricao->podeSolicitarIsencao())
+                        <div class="mt-6 rounded-md bg-blue-50 dark:bg-blue-900/30 p-4 text-sm text-blue-800 dark:text-blue-200">
+                            <p class="font-semibold">Precisa de isenção da taxa?</p>
+                            <p class="mt-1">Você ainda pode solicitar isenção das disciplinas do MAC/MAE.</p>
+                            <a href="{{ route('inscricao.isencao.show') }}" class="mt-2 inline-block font-medium underline">
+                                Solicitar isenção da taxa
+                            </a>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

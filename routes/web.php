@@ -6,6 +6,7 @@ use App\Http\Controllers\InscricaoController;
 use App\Http\Controllers\InscricaoPagamentoController;
 use App\Http\Controllers\InscricaoProfessorController;
 use App\Http\Controllers\PeriodoController;
+use App\Http\Controllers\SolicitacaoIsencaoAdminController;
 use App\Http\Controllers\SolicitacaoIsencaoController;
 use App\Http\Controllers\WspixWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -65,6 +66,11 @@ Route::middleware(['auth', 'verified', 'role.any:Admin,Secretario'])->group(func
         ->name('inscricoes.aprovar-secretaria');
     Route::post('/inscricoes/{inscricao}/reprovar-secretaria', [InscricaoAdminController::class, 'reprovarDisciplinaSecretaria'])
         ->name('inscricoes.reprovar-secretaria');
+
+    Route::post('/inscricoes/{inscricao}/isencao/decidir', [SolicitacaoIsencaoAdminController::class, 'decidir'])
+        ->name('inscricoes.isencao.decidir');
+    Route::post('/inscricoes/{inscricao}/isencao/estender', [SolicitacaoIsencaoAdminController::class, 'estender'])
+        ->name('inscricoes.isencao.estender');
 
 });
 

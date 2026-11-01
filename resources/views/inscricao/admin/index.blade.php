@@ -158,6 +158,11 @@
                                                 <a href="{{ route('inscricoes.show', $i) }}" class="font-medium text-blue-700 dark:text-blue-400 hover:underline">
                                                     {{ $i->nome_completo }}
                                                 </a>
+                                                @if ($i->temIsencaoPendente())
+                                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800">Aguardando isenção</span>
+                                                @elseif ($i->solicitacaoIsencao && $i->solicitacaoIsencao->status === \App\Enums\SolicitacaoIsencaoStatus::Aprovada)
+                                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800">Isento</span>
+                                                @endif
                                                 <x-inscricao-duplicata-badge :inscricao="$i" />
                                             </div>
                                         </td>

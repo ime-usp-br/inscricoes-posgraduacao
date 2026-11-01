@@ -38,7 +38,7 @@ class InscricaoAdminController extends Controller
         $periodoId = $request->integer('periodo_id', $periodoAtivo->id ?? 0);
 
         $query = Inscricao::query()
-            ->with(['periodo', 'disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2'])
+            ->with(['periodo', 'disciplinaObrigatoria', 'disciplinaOpcional1', 'disciplinaOpcional2', 'solicitacaoIsencao'])
             ->where('etapa_concluida', '>=', 3)
             ->orderByDesc('concluido_em')
             ->orderByDesc('id');
@@ -109,6 +109,8 @@ class InscricaoAdminController extends Controller
             'disciplinaObrigatoria',
             'disciplinaOpcional1',
             'disciplinaOpcional2',
+            'solicitacaoIsencao.documentos',
+            'solicitacaoIsencao.decididaPor',
         ]);
         Inscricao::atribuirFlagDuplicataPorEmail([$inscricao]);
 

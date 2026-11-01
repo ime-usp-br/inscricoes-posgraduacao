@@ -29,7 +29,8 @@ class EnviarLembretesIsencaoCommand extends Command
     public function handle(): int
     {
         $agora = now();
-        $dias = (int) config('isencao.lembrete_dias_antes', 2);
+        $diasConfig = config('isencao.lembrete_dias_antes', 2);
+        $dias = is_numeric($diasConfig) ? (int) $diasConfig : 2;
 
         $solicitacoes = SolicitacaoIsencao::query()
             ->with(['inscricao.periodo', 'decididaPor'])

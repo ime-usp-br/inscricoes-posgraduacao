@@ -6,7 +6,10 @@ use App\Http\Requests\DecidirSolicitacaoIsencaoRequest;
 use App\Models\Inscricao;
 use App\Services\SolicitacaoIsencaoService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class SolicitacaoIsencaoAdminController extends Controller
 {
@@ -23,15 +26,22 @@ class SolicitacaoIsencaoAdminController extends Controller
                 ->withErrors(['isencao' => 'Não há solicitação de isenção para esta inscrição.']);
         }
 
-        $aprovada = $request->string('decisao')->toString() === 'aprovar';
+        $usuario = Auth::user();
+
+        if ($usuario === null) {
+            abort(403);
+        }
+
+        $decisao = $request->string('decisao')->toString();
+        $aprovada = $decisao === 'aprovar';
 
         try {
             $service->decidir(
                 $solicitacao,
-                Auth::user(),
+                $usuario,
                 $aprovada,
-                $request->input('resposta_secretaria'),
-                $request->input('motivo_reprovacao'),
+                is_string($request->input('resposta_secretaria')) ? $request->input('resposta_secretaria') : null,
+                is_string($request->input('motivo_reprovacao')) ? $request->input('motivo_reprovacao') : null,
             );
         } catch (\Throwable $exception) {
             return redirect()
@@ -49,13 +59,19 @@ class SolicitacaoIsencaoAdminController extends Controller
     }
 
     public function estender(
-        \Illuminate\Http\Request $request,
+        Request $request,
         Inscricao $inscricao,
         SolicitacaoIsencaoService $service,
     ): RedirectResponse {
-        $this->validate($request, [
+        $validator = Validator::make($request->all(), [
             'prazo_pagamento' => ['required', 'date'],
         ]);
+
+        if ($validator->fails()) {
+            return redirect()
+                ->route('inscricoes.show', $inscricao)
+                ->withErrors($validator);
+        }
 
         $solicitacao = $inscricao->solicitacaoIsencao;
 
@@ -65,8 +81,10 @@ class SolicitacaoIsencaoAdminController extends Controller
                 ->withErrors(['isencao' => 'Não há solicitação de isenção para esta inscrição.']);
         }
 
+        $prazo = $request->input('prazo_pagamento');
+
         try {
-            $service->estenderPrazo($solicitacao, \Illuminate\Support\Carbon::parse($request->input('prazo_pagamento')));
+            $service->estenderPrazo($solicitacao, Carbon::parse(is_string($prazo) ? $prazo : now()->toDateTimeString()));
         } catch (\Throwable $exception) {
             return redirect()
                 ->route('inscricoes.show', $inscricao)

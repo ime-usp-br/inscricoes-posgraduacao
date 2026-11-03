@@ -275,9 +275,20 @@ class InscricaoAdminController extends Controller
                 'opcional_1' => null,
                 'opcional_2' => null,
             ];
-            foreach ($aprovadasPorAmbos as $item) {
-                if (isset($mapAprovadasPorSlot[$item['slot']])) {
-                    $mapAprovadasPorSlot[$item['slot']] = $item['disciplina'];
+            foreach (Inscricao::SLOTS_DISCIPLINA as $slot) {
+                if (
+                    $inscricao->aprovacaoSecretariaParaSlot($slot) === AprovacaoSecretariaDisciplina::Aprovado
+                    && $inscricao->aprovacaoProfessorParaSlot($slot) === AprovacaoProfessorDisciplina::Aprovado
+                ) {
+                    $disciplina = match ($slot) {
+                        'obrigatoria' => $inscricao->disciplinaObrigatoria,
+                        'opcional_1' => $inscricao->disciplinaOpcional1,
+                        'opcional_2' => $inscricao->disciplinaOpcional2,
+                        default => null,
+                    };
+                    if ($disciplina instanceof DisciplinaOfertada) {
+                        $mapAprovadasPorSlot[$slot] = $disciplina;
+                    }
                 }
             }
 

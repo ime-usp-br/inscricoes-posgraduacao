@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\WspixClient;
+use App\Enums\SolicitacaoIsencaoStatus;
 use App\Models\Inscricao;
 use App\Models\Periodo;
 use Illuminate\Support\Carbon;
@@ -13,6 +14,7 @@ class InscricaoPagamentoService
 {
     public function __construct(
         private readonly WspixClient $wspix,
+        private readonly SolicitacaoIsencaoService $isencao,
     ) {}
 
     public function valorPorDisciplina(): float
@@ -34,15 +36,73 @@ class InscricaoPagamentoService
     }
 
     /**
+     * Gera (ou reaproveita) a cobrança Pix da inscrição, por ação explícita do candidato.
+     *
+     * @return array<string, mixed> dados do Pix
+     */
+    public function gerarPix(Inscricao $inscricao): array
+    {
+        if ($inscricao->temSolicitacaoIsencaoDecidida() && $inscricao->prazoPagamentoExpirado()) {
+            throw new RuntimeException(
+                'O prazo para pagamento após a decisão da isenção expirou. Solicite a extensão do prazo à secretaria.'
+            );
+        }
+
+        return $this->garantirPixAtivo($inscricao);
+    }
+
+    /**
+     * Consulta o Pix já gerado sem criar uma nova cobrança.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function pixAtual(Inscricao $inscricao): ?array
+    {
+        if ($inscricao->pix_idfpix === null) {
+            return null;
+        }
+
+        if ($inscricao->temIsencaoPendente()) {
+            throw new RuntimeException(
+                'O pagamento está indisponível enquanto a solicitação de isenção estiver pendente.'
+            );
+        }
+
+        $this->garantirGeracaoDePixPermitida($inscricao);
+
+        $dados = $this->wspix->consultar($inscricao->pix_idfpix);
+
+        $quantidade = $this->quantidadeDisciplinasComPagamento($inscricao);
+
+        if ($this->pixEstaConcluido($dados)) {
+            $this->confirmarPagamento($inscricao, $dados);
+
+            return $dados;
+        }
+
+        $this->atualizarPixDaConsulta($inscricao, $dados, $quantidade, $this->valorTotal($inscricao));
+
+        return $dados;
+    }
+
+    /**
      * Garante Pix ativo com valor e quantidade de disciplinas corretos.
      *
      * @return array<string, mixed> dados do Pix (consulta ou geração)
      */
     public function garantirPixAtivo(Inscricao $inscricao): array
     {
+        if ($inscricao->temIsencaoPendente()) {
+            throw new RuntimeException(
+                'O pagamento está indisponível enquanto a solicitação de isenção estiver pendente.'
+            );
+        }
+
         if (! $inscricao->temPagamentoPendente()) {
             throw new RuntimeException('Esta inscrição não possui pagamento pendente.');
         }
+
+        $this->garantirGeracaoDePixPermitida($inscricao);
 
         $quantidade = $this->quantidadeDisciplinasComPagamento($inscricao);
         $valor = $this->valorTotal($inscricao);
@@ -76,8 +136,20 @@ class InscricaoPagamentoService
      */
     public function verificarPagamento(Inscricao $inscricao): array
     {
+        if ($inscricao->temIsencaoPendente()) {
+            throw new RuntimeException(
+                'O pagamento está indisponível enquanto a solicitação de isenção estiver pendente.'
+            );
+        }
+
+        if ($inscricao->temSolicitacaoIsencaoDecidida() && $inscricao->prazoPagamentoExpirado()) {
+            throw new RuntimeException(
+                'O prazo para pagamento após a decisão da isenção expirou. Solicite a extensão do prazo à secretaria.'
+            );
+        }
+
         if ($inscricao->pix_idfpix === null) {
-            return $this->garantirPixAtivo($inscricao);
+            throw new RuntimeException('Gere a cobrança Pix antes de verificar o pagamento.');
         }
 
         $dados = $this->wspix->consultar($inscricao->pix_idfpix, verificar: true);
@@ -97,7 +169,15 @@ class InscricaoPagamentoService
      */
     public function confirmarPagamento(Inscricao $inscricao, array $dados): void
     {
-        if (! $inscricao->temPagamentoPendente()) {
+        $solicitacao = $inscricao->solicitacaoIsencao;
+
+        $isencaoAtiva = $solicitacao !== null && in_array(
+            $solicitacao->status,
+            [SolicitacaoIsencaoStatus::Pendente, SolicitacaoIsencaoStatus::Aprovada],
+            true
+        );
+
+        if (! $inscricao->temPagamentoEmAberto() && ! $isencaoAtiva) {
             return;
         }
 
@@ -108,6 +188,25 @@ class InscricaoPagamentoService
         $inscricao->pix_status = 'Concluído';
         $inscricao->pix_pago_em = $pagoEm;
         $inscricao->save();
+
+        if ($solicitacao !== null) {
+            $this->isencao->cancelarPorPagamento($solicitacao, $pagoEm);
+        }
+    }
+
+    private function garantirGeracaoDePixPermitida(Inscricao $inscricao): void
+    {
+        if ($inscricao->temIsencaoPendente()) {
+            throw new RuntimeException(
+                'O pagamento está indisponível enquanto a solicitação de isenção estiver pendente.'
+            );
+        }
+
+        if ($inscricao->temSolicitacaoIsencaoDecidida() && $inscricao->prazoPagamentoExpirado()) {
+            throw new RuntimeException(
+                'O prazo para pagamento após a decisão da isenção expirou. Solicite a extensão do prazo à secretaria.'
+            );
+        }
     }
 
     /**

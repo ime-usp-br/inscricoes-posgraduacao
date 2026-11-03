@@ -7,6 +7,20 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+### Adicionado
+
+*   **Justificativa opcional na reprovação pela secretaria:**
+    *   A secretaria pode registrar um motivo (opcional) ao reprovar uma inscrição individual na página de detalhe.
+    *   Após a reprovação, o botão "Reprovar inscrição" passa a "Editar reprovação" (visual em vermelho claro, no estilo das badges) e permite alterar ou limpar o motivo.
+    *   O motivo é exibido na própria tela e removido automaticamente quando a secretaria aprova a inscrição (individualmente ou em bloco).
+    *   Restrito à reprovação individual pela secretaria; a área do professor não grava nem edita esse motivo.
+
+### Corrigido
+
+*   **Empilhamento do diálogo dos modais (`x-modal`) com Tailwind v4:**
+    *   O painel do modal agora é posicionado explicitamente (`relative z-10`) acima do backdrop.
+    *   No Tailwind v4 o utilitário `transform` é inócuo sem variáveis de transformação, então ao término da transição de entrada o painel perdia o contexto de empilhamento e ficava atrás do backdrop (o fundo escurecido parecia se aplicar ao próprio diálogo).
+
 ## [0.1.3] - 2025-10-17
 
 ### Adicionado

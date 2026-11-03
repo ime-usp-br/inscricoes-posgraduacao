@@ -52,9 +52,9 @@ class ReplicadoDisciplinaOfertadaService
                     'codigo' => $disciplina['codigo'],
                 ],
                 [
+                    // Não sobrescrever professor_nome/professor_email: são preenchidos pela
+                    // secretaria e definem quem pode avaliar a disciplina.
                     'nome' => $disciplina['nome'],
-                    'professor_nome' => null,
-                    'professor_email' => null,
                 ],
             );
 

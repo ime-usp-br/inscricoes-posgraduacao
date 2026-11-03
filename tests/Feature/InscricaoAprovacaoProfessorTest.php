@@ -26,6 +26,14 @@ class InscricaoAprovacaoProfessorTest extends TestCase
         Role::firstOrCreate(['name' => 'Secretario', 'guard_name' => 'web']);
     }
 
+    /**
+     * Torna o usuário o professor responsável pela disciplina do slot informado.
+     */
+    private function tornarResponsavel(User $professor, Inscricao $inscricao, string $slot = 'obrigatoria'): void
+    {
+        $inscricao->disciplinaNoSlot($slot)?->update(['professor_email' => $professor->email]);
+    }
+
     #[Test]
     public function professor_list_only_shows_inscriptions_with_secretaria_approved_discipline(): void
     {
@@ -109,6 +117,8 @@ class InscricaoAprovacaoProfessorTest extends TestCase
                 'aprovacao_obrigatoria_professor' => AprovacaoProfessorDisciplina::Aprovado,
             ]);
 
+        $this->tornarResponsavel($professor, $inscricao);
+
         $this->actingAs($professor)
             ->post(route('professor.inscricoes.reprovar', $inscricao), ['disciplina' => 'obrigatoria'])
             ->assertRedirect(route('professor.inscricoes.show', $inscricao));
@@ -135,6 +145,8 @@ class InscricaoAprovacaoProfessorTest extends TestCase
             ->create([
                 'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
             ]);
+
+        $this->tornarResponsavel($professor, $inscricao);
 
         $this->actingAs($professor)
             ->get(route('professor.inscricoes.index'))
@@ -183,6 +195,8 @@ class InscricaoAprovacaoProfessorTest extends TestCase
                 ],
             ]);
 
+        $this->tornarResponsavel($professor, $inscricao);
+
         $this->actingAs($professor)
             ->get(route('professor.inscricoes.show', $inscricao))
             ->assertOk()
@@ -205,6 +219,8 @@ class InscricaoAprovacaoProfessorTest extends TestCase
             ->create([
                 'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
             ]);
+
+        $this->tornarResponsavel($professor, $inscricao);
 
         $this->actingAs($professor)
             ->get(route('professor.inscricoes.show', $inscricao))
@@ -303,6 +319,8 @@ class InscricaoAprovacaoProfessorTest extends TestCase
                 'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
             ]);
 
+        $this->tornarResponsavel($professor, $inscricao);
+
         $historicoPath = 'inscricoes/'.$inscricao->id.'/historico_escolar.pdf';
         $cpfPath = 'inscricoes/'.$inscricao->id.'/cpf.pdf';
 
@@ -343,6 +361,8 @@ class InscricaoAprovacaoProfessorTest extends TestCase
             ->create([
                 'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
             ]);
+
+        $this->tornarResponsavel($professor, $inscricao);
 
         $historicoPath = 'inscricoes/'.$inscricao->id.'/historico_escolar.pdf';
         $inscricao->update([

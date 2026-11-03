@@ -10,9 +10,54 @@
 
     <div class="py-6">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8 space-y-4">
+            @if (session('success'))
+                <div class="rounded-md bg-green-50 dark:bg-green-900/30 p-4 text-sm text-green-800 dark:text-green-200">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             @if (session('info'))
                 <div class="rounded-md bg-blue-50 dark:bg-blue-900/30 p-4 text-sm text-blue-800 dark:text-blue-200">
                     {{ session('info') }}
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="rounded-md bg-red-50 dark:bg-red-900/30 p-4 text-sm text-red-800 dark:text-red-200 space-y-1">
+                    @foreach ($errors->all() as $erro)
+                        <p>{{ $erro }}</p>
+                    @endforeach
+                </div>
+            @endif
+
+            @if ($temIsencaoPendente)
+                <div class="rounded-md bg-amber-50 dark:bg-amber-900/30 p-4 text-sm text-amber-800 dark:text-amber-200 space-y-2">
+                    <p class="font-semibold">Solicitação de isenção em análise.</p>
+                    <p>O pagamento via Pix ficará disponível apenas após a decisão da secretaria.</p>
+                    <a href="{{ route('inscricao.isencao.show') }}" class="font-medium underline">
+                        Acompanhar solicitação de isenção
+                    </a>
+                </div>
+            @elseif ($podeSolicitarIsencao)
+                <div class="rounded-md bg-blue-50 dark:bg-blue-900/30 p-4 text-sm text-blue-800 dark:text-blue-200 space-y-2">
+                    <p class="font-semibold">Precisa de isenção da taxa?</p>
+                    <p>
+                        Você pode solicitar isenção das disciplinas do MAC/MAE antes de gerar a cobrança Pix.
+                        A solicitação é analisada pela secretaria e, enquanto estiver pendente, o pagamento fica indisponível.
+                    </p>
+                    <a href="{{ route('inscricao.isencao.show') }}" class="font-medium underline">
+                        Solicitar isenção da taxa
+                    </a>
+                </div>
+            @elseif ($solicitacaoIsencao)
+                <div class="rounded-md bg-gray-50 dark:bg-gray-900/30 p-4 text-sm text-gray-700 dark:text-gray-300 space-y-2">
+                    <p>
+                        Sua solicitação de isenção está
+                        <strong>{{ $solicitacaoIsencao->status->label() }}</strong>.
+                    </p>
+                    <a href="{{ route('inscricao.isencao.show') }}" class="font-medium underline">
+                        Ver detalhes da solicitação
+                    </a>
                 </div>
             @endif
 
@@ -28,6 +73,7 @@
                         </p>
                     </div>
 
+                    @if (! $temIsencaoPendente)
                     <div class="rounded-lg border border-gray-200 dark:border-gray-600 p-4 space-y-3">
                         <p class="text-sm font-medium">Disciplinas com taxa de inscrição (MAC / MAE)</p>
                         <ul class="list-disc pl-5 text-sm space-y-1">
@@ -54,15 +100,32 @@
                             </div>
                         </dl>
                     </div>
+                    @endif
 
                     @if ($erroPix)
                         <div class="rounded-md bg-red-50 dark:bg-red-900/30 p-4 text-sm text-red-800 dark:text-red-200">
-                            Não foi possível gerar o Pix: {{ $erroPix }}
+                            {{ $erroPix }}
                         </div>
-                    @elseif (is_array($pixDados))
+                    @endif
+
+                    @if (! $temIsencaoPendente && ! $inscricao->possuiPixGerado())
+                        <div class="rounded-lg border border-gray-200 dark:border-gray-600 p-4 space-y-3">
+                            <p class="text-sm font-medium">Cobrança Pix</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                A cobrança não é gerada automaticamente. Clique no botão abaixo quando estiver pronto para pagar.
+                            </p>
+                            <form method="POST" action="{{ route('inscricao.pagamento.gerar') }}">
+                                @csrf
+                                <button type="submit"
+                                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                                    Gerar cobrança Pix
+                                </button>
+                            </form>
+                        </div>
+                    @elseif (! $temIsencaoPendente && (is_array($pixDados) || $inscricao->pix_qr_code))
                         @php
-                            $qrBase64 = $pixDados['qrCodeImgBase64'] ?? null;
-                            $copiaCola = $inscricao->pix_qr_code ?? ($pixDados['qrCode'] ?? null);
+                            $qrBase64 = is_array($pixDados) ? ($pixDados['qrCodeImgBase64'] ?? null) : null;
+                            $copiaCola = $inscricao->pix_qr_code ?? (is_array($pixDados) ? ($pixDados['qrCode'] ?? null) : null);
                         @endphp
 
                         @if (is_string($qrBase64) && $qrBase64 !== '')

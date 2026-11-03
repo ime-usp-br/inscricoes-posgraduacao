@@ -63,9 +63,15 @@ class InscricaoFactory extends Factory
 
             $periodo ??= Periodo::factory()->create();
 
-            $disciplinas = DisciplinaOfertada::factory()->count(3)->create([
-                'periodo_id' => $periodo->id,
-            ]);
+            $departamentos = ['MAC', 'MAE', 'MAC'];
+            $disciplinas = [];
+
+            foreach ($departamentos as $departamento) {
+                $disciplinas[] = DisciplinaOfertada::factory()->create([
+                    'periodo_id' => $periodo->id,
+                    'departamento' => $departamento,
+                ]);
+            }
 
             return [
                 'periodo_id' => $periodo->id,

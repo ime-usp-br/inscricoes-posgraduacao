@@ -28,6 +28,10 @@ class InscricaoController extends Controller
         $inscricao = $this->inscricaoAtualNaSessao($periodoAtivo->id);
 
         if ($inscricao !== null && $inscricao->etapa_concluida >= 3) {
+            if ($inscricao->temIsencaoPendente() && config('isencao.habilitado', false)) {
+                return redirect()->route('inscricao.isencao.show');
+            }
+
             if ($inscricao->temPagamentoPendente()) {
                 return redirect()->route('inscricao.pagamento');
             }

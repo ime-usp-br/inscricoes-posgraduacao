@@ -112,7 +112,9 @@
                                 <ul class="mt-3 divide-y divide-gray-200 dark:divide-gray-600 rounded-md border border-gray-200 dark:border-gray-600">
                                     @foreach ($documentosExistentes as $documento)
                                         <li class="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
-                                            <a href="{{ route('inscricao.isencao.documento', $documento) }}"
+                                            <a href="{{ !empty($acessoAssinado) ? URL::temporarySignedRoute('inscricao.isencao.documento.assinado', now()->addDays((int) config('isencao.link_validade_dias', 30)), ['documento' => $documento]) : route('inscricao.isencao.documento', $documento) }}"
+                                               target="_blank"
+                                               rel="noopener"
                                                class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
                                                 {{ $documento->nome_original }}
                                             </a>

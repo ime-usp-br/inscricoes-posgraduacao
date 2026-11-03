@@ -265,6 +265,70 @@ class SolicitacaoIsencaoController extends Controller
             ->first();
     }
 
+    public function showAssinada(Inscricao $inscricao): View|RedirectResponse
+    {
+        $this->garantirFluxoHabilitado();
+
+        if ($inscricao->etapa_concluida < 3) {
+            abort(403);
+        }
+
+        $inscricao->loadMissing([
+            'periodo',
+            'disciplinaObrigatoria',
+            'disciplinaOpcional1',
+            'disciplinaOpcional2',
+            'solicitacaoIsencao.documentos',
+        ]);
+
+        $solicitacao = $inscricao->solicitacaoIsencao;
+
+        if ($solicitacao !== null && $solicitacao->status !== SolicitacaoIsencaoStatus::Cancelada) {
+            return view('inscricao.isencao.status', [
+                'inscricao' => $inscricao,
+                'periodo' => $inscricao->periodo,
+                'solicitacao' => $solicitacao,
+                'acessoAssinado' => true,
+            ]);
+        }
+
+        if (! $inscricao->podeSolicitarIsencao()) {
+            return redirect()
+                ->route('inscricao.pagamento')
+                ->withErrors(['isencao' => 'Esta inscrição não está elegível para solicitar isenção neste momento.']);
+        }
+
+        return view('inscricao.isencao.form', [
+            'inscricao' => $inscricao,
+            'periodo' => $inscricao->periodo,
+            'solicitacao' => $solicitacao,
+            'disciplinas' => $inscricao->disciplinasElegiveisParaIsencao(),
+            'acessoAssinado' => true,
+        ]);
+    }
+
+    public function documentoAssinado(SolicitacaoIsencaoDocumento $documento): StreamedResponse
+    {
+        $this->garantirFluxoHabilitado();
+
+        $documento->loadMissing('solicitacaoIsencao.inscricao');
+
+        $inscricao = $documento->solicitacaoIsencao?->inscricao;
+
+        if ($inscricao === null || $inscricao->etapa_concluida < 3) {
+            abort(403);
+        }
+
+        $disco = config('isencao.documentos.disco', 'local');
+        $disco = is_string($disco) ? $disco : 'local';
+
+        if (! Storage::disk($disco)->exists($documento->path)) {
+            abort(404);
+        }
+
+        return Storage::disk($disco)->download($documento->path, $documento->nome_original);
+    }
+
     private function garantirFluxoHabilitado(): void
     {
         abort_unless((bool) config('isencao.habilitado', false), 404);

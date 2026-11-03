@@ -292,19 +292,12 @@ class InscricaoAdminController extends Controller
                 }
             }
 
-            $formatDisciplinaAprovada = function ($disciplina, string $slot): string {
+            $formatDisciplinaAprovada = function ($disciplina): string {
                 if (! $disciplina instanceof DisciplinaOfertada) {
                     return '';
                 }
 
-                $slotLabel = match ($slot) {
-                    'obrigatoria' => 'obrigatória',
-                    'opcional_1' => 'opcional 1',
-                    'opcional_2' => 'opcional 2',
-                    default => $slot,
-                };
-
-                return $disciplina->codigo_completo.' '.$disciplina->nome.' ('.$slotLabel.')';
+                return $disciplina->codigo_completo.' '.$disciplina->nome;
             };
 
             $resumido = [];
@@ -347,9 +340,9 @@ class InscricaoAdminController extends Controller
                 $getDados('rg_rne_rnm'),
                 $getDados('passaporte'),
                 $getDados('telefone'),
-                $formatDisciplinaAprovada($mapAprovadasPorSlot['obrigatoria'], 'obrigatoria'),
-                $formatDisciplinaAprovada($mapAprovadasPorSlot['opcional_1'], 'opcional_1'),
-                $formatDisciplinaAprovada($mapAprovadasPorSlot['opcional_2'], 'opcional_2'),
+                $formatDisciplinaAprovada($mapAprovadasPorSlot['obrigatoria']),
+                $formatDisciplinaAprovada($mapAprovadasPorSlot['opcional_1']),
+                $formatDisciplinaAprovada($mapAprovadasPorSlot['opcional_2']),
                 implode('; ', $resumido),
                 method_exists($resumoPagamento, 'label') ? $resumoPagamento->label() : (is_object($resumoPagamento) ? ($resumoPagamento->value ?? (string) $resumoPagamento) : (string) $resumoPagamento),
                 $temIsencao ? 'Sim' : 'Não',

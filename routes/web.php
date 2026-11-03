@@ -23,12 +23,18 @@ Route::get('/inscricao/pagamento/assinada/{inscricao}', [InscricaoPagamentoContr
 Route::post('/inscricao/pagamento/gerar', [InscricaoPagamentoController::class, 'gerar'])->name('inscricao.pagamento.gerar');
 Route::post('/inscricao/pagamento/verificar', [InscricaoPagamentoController::class, 'verificar'])->name('inscricao.pagamento.verificar');
 Route::get('/inscricao/isencao', [SolicitacaoIsencaoController::class, 'show'])->name('inscricao.isencao.show');
+Route::get('/inscricao/isencao/assinada/{inscricao}', [SolicitacaoIsencaoController::class, 'showAssinada'])
+    ->middleware('signed')
+    ->name('inscricao.isencao.assinada');
 Route::get('/inscricao/isencao/editar', [SolicitacaoIsencaoController::class, 'edit'])->name('inscricao.isencao.edit');
 Route::post('/inscricao/isencao', [SolicitacaoIsencaoController::class, 'store'])->name('inscricao.isencao.store');
 Route::put('/inscricao/isencao', [SolicitacaoIsencaoController::class, 'update'])->name('inscricao.isencao.update');
 Route::post('/inscricao/isencao/cancelar', [SolicitacaoIsencaoController::class, 'cancelar'])->name('inscricao.isencao.cancelar');
 Route::get('/inscricao/isencao/documento/{documento}', [SolicitacaoIsencaoController::class, 'documento'])
     ->name('inscricao.isencao.documento');
+Route::get('/inscricao/isencao/documento/assinado/{documento}', [SolicitacaoIsencaoController::class, 'documentoAssinado'])
+    ->middleware('signed')
+    ->name('inscricao.isencao.documento.assinado');
 Route::get('/inscricao/pagamento/{slot}', [InscricaoPagamentoController::class, 'redirectLegado'])
     ->whereIn('slot', ['obrigatoria', 'opcional_1', 'opcional_2']);
 Route::post('/webhooks/wspix', WspixWebhookController::class)->name('webhooks.wspix');

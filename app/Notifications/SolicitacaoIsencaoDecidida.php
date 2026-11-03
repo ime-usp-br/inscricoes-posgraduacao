@@ -8,6 +8,7 @@ use App\Notifications\Concerns\WithEmailLogging;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
 
 class SolicitacaoIsencaoDecidida extends Notification implements ShouldQueue
@@ -41,7 +42,14 @@ class SolicitacaoIsencaoDecidida extends Notification implements ShouldQueue
         $inscricao = $this->solicitacao->inscricao ?? Inscricao::find($this->solicitacao->inscricao_id);
         $aprovada = $this->solicitacao->status->value === 'aprovada';
 
-        $url = route('inscricao.isencao.show');
+        try {
+            $expira = $inscricao?->prazoPagamento() ?? now()->addDays((int) config('isencao.link_validade_dias', 30));
+            $url = $inscricao
+                ? URL::temporarySignedRoute('inscricao.isencao.assinada', $expira, ['inscricao' => $inscricao->id])
+                : route('inscricao.isencao.show');
+        } catch (\Throwable) {
+            $url = route('inscricao.isencao.show');
+        }
 
         $message = (new MailMessage)
             ->subject($aprovada ? 'Solicitação de isenção aprovada' : 'Solicitação de isenção reprovada')

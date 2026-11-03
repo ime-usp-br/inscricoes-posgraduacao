@@ -153,36 +153,21 @@ class InscricaoAdminController extends Controller
             'RG / RNE / RNM',
             'Passaporte',
             'Telefone / Celular',
+            // Disciplinas aprovadas em ambas as etapas (explícito e claro)
+            'Disciplina obrigatória aprovada (secretaria+professor)',
+            'Opcional 1 aprovada (secretaria+professor)',
+            'Opcional 2 aprovada (secretaria+professor)',
+            'Disciplinas aprovadas (resumido)',
+            // Situações / resumo
+            'Pagamento (resumo)',
+            'Tem solicitação de isenção?',
+            'Status solicitação de isenção',
+            // Demais informações
             'Data de nascimento',
             'Nacionalidade',
             'País de nascimento',
             'Estado de nascimento',
             'Município / Província',
-            // Disciplinas aprovadas em ambas as etapas (explícito)
-            'Qtd. disciplinas aprovadas (secretaria+professor)',
-            'Aprovada em slot 1',
-            'Aprovada em disciplina 1 (código completo)',
-            'Aprovada em disciplina 1 (departamento)',
-            'Aprovada em disciplina 1 (nome)',
-            'Aprovada em slot 2',
-            'Aprovada em disciplina 2 (código completo)',
-            'Aprovada em disciplina 2 (departamento)',
-            'Aprovada em disciplina 2 (nome)',
-            'Aprovada em slot 3',
-            'Aprovada em disciplina 3 (código completo)',
-            'Aprovada em disciplina 3 (departamento)',
-            'Aprovada em disciplina 3 (nome)',
-            // Justificativas das disciplinas solicitadas
-            'Justificativa disciplina obrigatória',
-            'Justificativa opcional 1',
-            'Justificativa opcional 2',
-            // Situações / resumo
-            'Aprovação Secretaria (resumo)',
-            'Aprovação Professor (resumo)',
-            'Pagamento (resumo)',
-            'Tem solicitação de isenção?',
-            'Status solicitação de isenção',
-            // Demais informações
             'Concluída em',
             'Gênero',
             'Nome da mãe',
@@ -285,6 +270,61 @@ class InscricaoAdminController extends Controller
                 }
             }
 
+            $mapAprovadasPorSlot = [
+                'obrigatoria' => null,
+                'opcional_1' => null,
+                'opcional_2' => null,
+            ];
+            foreach ($aprovadasPorAmbos as $item) {
+                if (isset($mapAprovadasPorSlot[$item['slot']])) {
+                    $mapAprovadasPorSlot[$item['slot']] = $item['disciplina'];
+                }
+            }
+
+            $formatDisciplinaAprovada = function ($disciplina, string $slot): string {
+                if (! $disciplina instanceof DisciplinaOfertada) {
+                    return '';
+                }
+
+                $slotLabel = match ($slot) {
+                    'obrigatoria' => 'obrigatória',
+                    'opcional_1' => 'opcional 1',
+                    'opcional_2' => 'opcional 2',
+                    default => $slot,
+                };
+
+                return $disciplina->codigo_completo.' '.$disciplina->nome.' ('.$slotLabel.')';
+            };
+
+            $resumido = [];
+            foreach ($aprovadasPorAmbos as $item) {
+                /** @var DisciplinaOfertada $disciplina */
+                $disciplina = $item['disciplina'];
+                $slotLabel = match ($item['slot']) {
+                    'obrigatoria' => 'obrigatória',
+                    'opcional_1' => 'opcional 1',
+                    'opcional_2' => 'opcional 2',
+                    default => $item['slot'],
+                };
+                $resumido[] = $disciplina->codigo_completo.' '.$disciplina->nome.' ('.$slotLabel.')';
+            }
+
+            $resumoPagamento = $inscricao->resumoPagamento();
+            $temIsencao = $inscricao->relationLoaded('solicitacaoIsencao') ? $inscricao->solicitacaoIsencao !== null : $inscricao->solicitacaoIsencao()->exists();
+            $statusIsencao = '';
+            if ($temIsencao) {
+                $solicitacao = $inscricao->relationLoaded('solicitacaoIsencao') ? $inscricao->solicitacaoIsencao : $inscricao->solicitacaoIsencao;
+                if ($solicitacao && isset($solicitacao->status)) {
+                    if (is_object($solicitacao->status) && method_exists($solicitacao->status, 'label')) {
+                        $statusIsencao = $solicitacao->status->label();
+                    } elseif (is_object($solicitacao->status)) {
+                        $statusIsencao = (string) ($solicitacao->status->value ?? $solicitacao->status);
+                    } else {
+                        $statusIsencao = (string) $solicitacao->status;
+                    }
+                }
+            }
+
             $linha = [
                 $inscricao->id,
                 $periodoLabel,
@@ -296,63 +336,34 @@ class InscricaoAdminController extends Controller
                 $getDados('rg_rne_rnm'),
                 $getDados('passaporte'),
                 $getDados('telefone'),
+                $formatDisciplinaAprovada($mapAprovadasPorSlot['obrigatoria'], 'obrigatoria'),
+                $formatDisciplinaAprovada($mapAprovadasPorSlot['opcional_1'], 'opcional_1'),
+                $formatDisciplinaAprovada($mapAprovadasPorSlot['opcional_2'], 'opcional_2'),
+                implode('; ', $resumido),
+                method_exists($resumoPagamento, 'label') ? $resumoPagamento->label() : (is_object($resumoPagamento) ? ($resumoPagamento->value ?? (string) $resumoPagamento) : (string) $resumoPagamento),
+                $temIsencao ? 'Sim' : 'Não',
+                $statusIsencao,
                 $getDados('data_nascimento'),
                 $getDados('nacionalidade'),
                 $getDados('pais_nascimento'),
                 $getDados('estado_nascimento'),
                 $getDados('municipio_provincia'),
-                count($aprovadasPorAmbos),
-            ];
-
-            for ($i = 0; $i < 3; $i++) {
-                if (isset($aprovadasPorAmbos[$i])) {
-                    $item = $aprovadasPorAmbos[$i];
-                    /** @var DisciplinaOfertada $disciplina */
-                    $disciplina = $item['disciplina'];
-                    $linha[] = $item['slot'];
-                    $linha[] = $disciplina->codigo_completo;
-                    $linha[] = $disciplina->departamento;
-                    $linha[] = $disciplina->nome;
-                } else {
-                    $linha[] = '';
-                    $linha[] = '';
-                    $linha[] = '';
-                    $linha[] = '';
-                }
-            }
-
-            $linha[] = $inscricao->justificativa_disciplina_obrigatoria ?? '';
-            $linha[] = $inscricao->justificativa_disciplina_opcional_1 ?? '';
-            $linha[] = $inscricao->justificativa_disciplina_opcional_2 ?? '';
-
-            $resumoSecretaria = $inscricao->resumoAprovacaoSecretaria();
-            $resumoProfessor = $inscricao->resumoAprovacaoProfessor();
-            $resumoPagamento = $inscricao->resumoPagamento();
-
-            $linha[] = method_exists($resumoSecretaria, 'label') ? $resumoSecretaria->label('secretaria') : (is_object($resumoSecretaria) ? $resumoSecretaria->value : (string) $resumoSecretaria);
-            $linha[] = method_exists($resumoProfessor, 'label') ? $resumoProfessor->label('professor') : (is_object($resumoProfessor) ? $resumoProfessor->value : (string) $resumoProfessor);
-            $linha[] = method_exists($resumoPagamento, 'label') ? $resumoPagamento->label() : (is_object($resumoPagamento) ? $resumoPagamento->value : (string) $resumoPagamento);
-
-            $linha[] = $temIsencao ? 'Sim' : 'Não';
-            $linha[] = $statusIsencao;
-
-            $linha[] = optional($inscricao->concluido_em)->format('d/m/Y H:i') ?? '';
-
-            $linha[] = $getDados('genero');
-            $linha[] = $getDados('nome_mae');
-            $linha[] = $getDados('endereco_completo');
-            $linha[] = $getDados('cep');
-            $linha[] = $getDados('unidade');
-            $linha[] = $getDados('tipo');
-            $linha[] = $getDados('pos_graduacao_externo');
-            $linha[] = $getDados('nome_programa_externo');
-            $linha[] = $getDados('formado_graduacao_usp');
-            $linha[] = $getDados('curso_usp_anterior');
-            $linha[] = $getDados('estrangeiro');
-            $linha[] = $getDados('orgao_expedidor');
-            $linha[] = $getDados('estado_expedicao');
-            $linha[] = $getDados('data_expedicao');
-            $linha[] = $getDados('visto_estudante_mercosul');
+                optional($inscricao->concluido_em)->format('d/m/Y H:i') ?? '',
+                $getDados('genero'),
+                $getDados('nome_mae'),
+                $getDados('endereco_completo'),
+                $getDados('cep'),
+                $getDados('unidade'),
+                $getDados('tipo'),
+                $getDados('pos_graduacao_externo'),
+                $getDados('nome_programa_externo'),
+                $getDados('formado_graduacao_usp'),
+                $getDados('curso_usp_anterior'),
+                $getDados('estrangeiro'),
+                $getDados('orgao_expedidor'),
+                $getDados('estado_expedicao'),
+                $getDados('data_expedicao'),
+                $getDados('visto_estudante_mercosul');
 
             $sheet->fromArray($linha, null, 'A'.$row);
             $row++;
@@ -361,9 +372,11 @@ class InscricaoAdminController extends Controller
         $lastColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers));
         foreach (range('A', $lastColumn) as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
+            $sheet->getColumnDimension($column)->setWidth($sheet->getColumnDimension($column)->getWidth() + 2);
         }
-
         $sheet->getStyle('A1:'.$lastColumn.'1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:'.$lastColumn.'1')->getAlignment()->setWrapText(true);
+        $sheet->getDefaultRowDimension()->setRowHeight(-1);
 
         $filename = 'relatorio-aprovados-'.now()->format('Y-m-d-His').'.xlsx';
 

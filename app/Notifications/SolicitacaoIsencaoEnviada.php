@@ -9,6 +9,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\URL;
 
 class SolicitacaoIsencaoEnviada extends Notification implements ShouldQueue
 {
@@ -40,7 +41,14 @@ class SolicitacaoIsencaoEnviada extends Notification implements ShouldQueue
     {
         $inscricao = $this->solicitacao->inscricao ?? Inscricao::find($this->solicitacao->inscricao_id);
 
-        $url = route('inscricao.isencao.show');
+        try {
+            $expira = $inscricao?->prazoPagamento() ?? now()->addDays((int) config('isencao.link_validade_dias', 30));
+            $url = $inscricao
+                ? URL::temporarySignedRoute('inscricao.isencao.assinada', $expira, ['inscricao' => $inscricao->id])
+                : route('inscricao.isencao.show');
+        } catch (\Throwable) {
+            $url = route('inscricao.isencao.show');
+        }
 
         return (new MailMessage)
             ->subject('Solicitação de isenção recebida')

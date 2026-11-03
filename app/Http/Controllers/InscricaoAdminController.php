@@ -363,7 +363,8 @@ class InscricaoAdminController extends Controller
                 $getDados('orgao_expedidor'),
                 $getDados('estado_expedicao'),
                 $getDados('data_expedicao'),
-                $getDados('visto_estudante_mercosul');
+                $getDados('visto_estudante_mercosul'),
+            ];
 
             $sheet->fromArray($linha, null, 'A'.$row);
             $row++;

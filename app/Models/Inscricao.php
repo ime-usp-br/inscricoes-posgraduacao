@@ -986,9 +986,16 @@ class Inscricao extends Model
      */
     public function scopeComPagamentoConcluido(Builder $query): Builder
     {
+        $pendente = PagamentoDisciplinaStatus::Pendente->value;
+
         return $query->whereNotNull('pagamentos_disciplinas')
-            ->whereNot(function (Builder $sub): void {
-                $sub->comPagamentoPendente();
+            ->where(function (Builder $q) use ($pendente): void {
+                foreach (self::SLOTS_DISCIPLINA as $slot) {
+                    $q->where(function (Builder $slotQuery) use ($slot, $pendente): void {
+                        $slotQuery->whereNull("pagamentos_disciplinas->{$slot}")
+                            ->orWhere("pagamentos_disciplinas->{$slot}", '!=', $pendente);
+                    });
+                }
             });
     }
 

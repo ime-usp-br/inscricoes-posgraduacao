@@ -290,6 +290,32 @@ class InscricaoPagamentoTest extends TestCase
     }
 
     #[Test]
+    public function pagamento_concluido_aceita_slots_ausentes_no_json(): void
+    {
+        $periodo = Periodo::factory()->create();
+
+        $pago = $this->inscricaoNaoUspNaoFormado($periodo->id);
+        $pago->update([
+            'pagamentos_disciplinas' => ['obrigatoria' => PagamentoDisciplinaStatus::Pago->value],
+        ]);
+
+        $pendente = $this->inscricaoNaoUspNaoFormado($periodo->id);
+        $pendente->update([
+            'pagamentos_disciplinas' => [
+                'obrigatoria' => PagamentoDisciplinaStatus::Pago->value,
+                'opcional_1' => PagamentoDisciplinaStatus::Pendente->value,
+            ],
+        ]);
+
+        $ids = Inscricao::query()
+            ->whereIn('id', [$pago->id, $pendente->id])
+            ->comPagamentoConcluido()
+            ->pluck('id');
+
+        $this->assertSame([$pago->id], $ids->all());
+    }
+
+    #[Test]
     public function inscricoes_index_exibe_coluna_e_filtra_por_status_de_pagamento(): void
     {
         $secretario = User::factory()->create();

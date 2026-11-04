@@ -13,15 +13,17 @@ use Throwable;
 
 class AprovacaoProfessorPendenteNotification extends Notification implements ShouldQueue
 {
-    use Queueable, WithEmailLogging;
+    use Queueable;
+
+    /** @use WithEmailLogging<\App\Models\User|\Illuminate\Notifications\AnonymousNotifiable> */
+    use WithEmailLogging;
 
     /**
-     * @param array<int, array{inscricao: Inscricao, disciplina: DisciplinaOfertada, slot: string}> $pendencias
+     * @param  array<int, array{inscricao: Inscricao, disciplina: DisciplinaOfertada, slot: string}>  $pendencias
      */
     public function __construct(
         private readonly array $pendencias,
-    ) {
-    }
+    ) {}
 
     /**
      * @return list<string>
@@ -31,13 +33,19 @@ class AprovacaoProfessorPendenteNotification extends Notification implements Sho
         return ['mail'];
     }
 
-    public function toMail(object $notifiable): MailMessage
+    /**
+     * @param  mixed  $notifiable
+     */
+    protected function toMailMessage($notifiable): MailMessage
     {
         $count = count($this->pendencias);
+        $nome = is_object($notifiable) && property_exists($notifiable, 'name') && is_string($notifiable->name)
+            ? $notifiable->name
+            : null;
 
         $mail = (new MailMessage)
             ->subject($count === 1 ? '1 inscrição pendente para sua aprovação' : "{$count} inscrições pendentes para sua aprovação")
-            ->greeting('Olá'.($notifiable->name ? ', '.$notifiable->name : ',').',');
+            ->greeting('Olá'.($nome ? ', '.$nome : '').',');
 
         $mail->line('As disciplinas abaixo foram aprovadas pela Secretaria e aguardam sua avaliação como professor(a):');
         $mail->line('**Pendências:**');
@@ -46,12 +54,7 @@ class AprovacaoProfessorPendenteNotification extends Notification implements Sho
             $inscricao = $item['inscricao'];
             $disciplina = $item['disciplina'];
 
-            if ($disciplina instanceof DisciplinaOfertada) {
-                $codigo = $disciplina->codigo_completo;
-            } else {
-                $codigo = '-';
-            }
-
+            $codigo = $disciplina->codigo_completo;
             $nomeCandidato = $inscricao->nome_completo ?? '-';
             $inscricaoId = $inscricao->id ?? '-';
 

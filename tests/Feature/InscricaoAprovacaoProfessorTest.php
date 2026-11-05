@@ -6,6 +6,7 @@ use App\Enums\AprovacaoProfessorDisciplina;
 use App\Enums\AprovacaoSecretariaDisciplina;
 use App\Enums\InscricaoStatus;
 use App\Models\Inscricao;
+use App\Models\Periodo;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -39,15 +40,16 @@ class InscricaoAprovacaoProfessorTest extends TestCase
     {
         $admin = User::factory()->create();
         $admin->assignRole('Admin');
+        $periodo = Periodo::factory()->create();
 
         $comAprovacao = Inscricao::factory()
             ->concluida()
-            ->comTresDisciplinas()
+            ->comTresDisciplinas($periodo)
             ->create(['aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado]);
 
         $semAprovacao = Inscricao::factory()
             ->concluida()
-            ->comTresDisciplinas()
+            ->comTresDisciplinas($periodo)
             ->create();
 
         $this->actingAs($admin)

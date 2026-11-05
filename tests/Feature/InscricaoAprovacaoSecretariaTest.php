@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\AprovacaoSecretariaDisciplina;
 use App\Enums\InscricaoStatus;
 use App\Models\Inscricao;
+use App\Models\Periodo;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -274,14 +275,14 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
     {
         $admin = User::factory()->create();
         $admin->assignRole('Admin');
-        $periodo = \App\Models\Periodo::factory()->create();
+        $periodo = Periodo::factory()->create();
 
-        $aprovada = Inscricao::factory()->concluida()->comTresDisciplinas()->create([
+        $aprovada = Inscricao::factory()->concluida()->comTresDisciplinas($periodo)->create([
             'periodo_id' => $periodo->id,
             'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
         ]);
 
-        Inscricao::factory()->concluida()->comTresDisciplinas()->create([
+        Inscricao::factory()->concluida()->comTresDisciplinas($periodo)->create([
             'periodo_id' => $periodo->id,
         ]);
 
@@ -398,13 +399,16 @@ class InscricaoAprovacaoSecretariaTest extends TestCase
         $admin->assignRole('Admin');
 
         $email = 'candidato.duplicado@example.com';
+        $periodo = Periodo::factory()->create();
 
         $antiga = Inscricao::factory()->concluida()->create([
+            'periodo_id' => $periodo->id,
             'nome_completo' => 'Inscrição Antiga',
             'email' => $email,
         ]);
 
         $recente = Inscricao::factory()->concluida()->create([
+            'periodo_id' => $periodo->id,
             'nome_completo' => 'Inscrição Recente',
             'email' => strtoupper($email),
         ]);

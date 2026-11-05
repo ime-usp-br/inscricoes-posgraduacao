@@ -186,7 +186,11 @@
                             @if (isset($pagamentos[$item['slot']]))
                                 <div>
                                     <span class="font-medium text-gray-600 dark:text-gray-400">Pagamento:</span>
-                                    {{ ($pagamentos[$item['slot']] ?? '') === 'pago' ? 'Pago' : 'Não pago' }}
+                                    {{ match ($pagamentos[$item['slot']] ?? null) {
+                                        \App\Enums\PagamentoDisciplinaStatus::Pago->value => 'Pago',
+                                        \App\Enums\PagamentoDisciplinaStatus::Isento->value => 'Isento',
+                                        default => 'Não pago',
+                                    } }}
                                 </div>
                             @endif
                         </dd>

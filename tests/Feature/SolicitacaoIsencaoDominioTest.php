@@ -195,6 +195,31 @@ class SolicitacaoIsencaoDominioTest extends TestCase
     }
 
     #[Test]
+    public function detalhes_da_inscricao_exibem_disciplina_isenta_apos_decisao_aprovada(): void
+    {
+        $inscricao = $this->criarInscricao(['MAC']);
+        $usuario = $this->secretario();
+        Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        $usuario->assignRole('Admin');
+
+        $solicitacao = $this->service->criar($inscricao, ['obrigatoria'], $this->justificativa());
+        $this->service->decidir($solicitacao, $usuario, true, 'Documentação aceita.');
+
+        $inscricao->update([
+            'aprovacao_obrigatoria_secretaria' => AprovacaoSecretariaDisciplina::Aprovado,
+        ]);
+
+        foreach (['inscricoes.show', 'professor.inscricoes.show'] as $route) {
+            $this->actingAs($usuario)
+                ->get(route($route, $inscricao))
+                ->assertOk()
+                ->assertSee('Pagamento:')
+                ->assertSee('Isento')
+                ->assertDontSee('Não pago');
+        }
+    }
+
+    #[Test]
     public function decisao_reprovada_exige_motivo_e_restaura_pendencias(): void
     {
         $inscricao = $this->criarInscricao(['MAC', 'MAE']);

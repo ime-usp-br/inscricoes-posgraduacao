@@ -103,21 +103,22 @@ class InscricaoRelatorioSecretariaTest extends TestCase
         try {
             $sheet = IOFactory::load($tempPath)->getActiveSheet();
 
-            $this->assertSame('Nome completo', $sheet->getCell('A1')->getValue());
-            $this->assertSame('Disciplina 1', $sheet->getCell('B1')->getValue());
-            $this->assertSame('Disciplina 2', $sheet->getCell('C1')->getValue());
-            $this->assertSame('Disciplina 3', $sheet->getCell('D1')->getValue());
+            $this->assertSame('ID inscrição', $sheet->getCell('A1')->getValue());
+            $this->assertSame('Nome completo', $sheet->getCell('C1')->getValue());
+            $this->assertSame('Disciplina obrigatória aprovada (secretaria+professor)', $sheet->getCell('K1')->getValue());
+            $this->assertSame('Opcional 1 aprovada (secretaria+professor)', $sheet->getCell('L1')->getValue());
+            $this->assertSame('Opcional 2 aprovada (secretaria+professor)', $sheet->getCell('M1')->getValue());
 
-            $this->assertSame('Candidato Aprovado Completo', $sheet->getCell('A2')->getValue());
+            $this->assertSame('Candidato Aprovado Completo', $sheet->getCell('C2')->getValue());
             $this->assertSame(
-                $aprovada->disciplinaObrigatoria->codigo_completo.' — '.$aprovada->disciplinaObrigatoria->nome,
-                $sheet->getCell('B2')->getValue()
+                $aprovada->disciplinaObrigatoria->codigo_completo.' '.$aprovada->disciplinaObrigatoria->nome,
+                $sheet->getCell('K2')->getValue()
             );
             $this->assertSame(
-                $aprovada->disciplinaOpcional1->codigo_completo.' — '.$aprovada->disciplinaOpcional1->nome,
-                $sheet->getCell('C2')->getValue()
+                $aprovada->disciplinaOpcional1->codigo_completo.' '.$aprovada->disciplinaOpcional1->nome,
+                $sheet->getCell('L2')->getValue()
             );
-            $this->assertSame('', (string) $sheet->getCell('D2')->getValue());
+            $this->assertSame('', (string) $sheet->getCell('M2')->getValue());
             $this->assertNull($sheet->getCell('A3')->getValue());
         } finally {
             @unlink($tempPath);

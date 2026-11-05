@@ -16,6 +16,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -374,8 +375,10 @@ class InscricaoAdminController extends Controller
             $row++;
         }
 
-        $lastColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers));
-        foreach (range('A', $lastColumn) as $column) {
+        $lastColumnIndex = count($headers);
+        $lastColumn = Coordinate::stringFromColumnIndex($lastColumnIndex);
+        for ($columnIndex = 1; $columnIndex <= $lastColumnIndex; $columnIndex++) {
+            $column = Coordinate::stringFromColumnIndex($columnIndex);
             $sheet->getColumnDimension($column)->setAutoSize(true);
             $sheet->getColumnDimension($column)->setWidth($sheet->getColumnDimension($column)->getWidth() + 2);
         }
